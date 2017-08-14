@@ -29,7 +29,9 @@ func (ws *WafServer) ServeForbidden(w http.ResponseWriter) {
 //analyze the request
 func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	perfCounters.Add(COUNTER_CONNECTIONS, 1)
+
 	ctx := newContext(&w, r)
+	defer ws.triggerAfterServed(ctx)
 
 	//todo: if whitelist, then serve content
 

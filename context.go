@@ -20,23 +20,23 @@ type Context struct {
 }
 
 type ContextData struct {
-	Host       string
-	Path       string
-	Method     string
-	Ip         string
-	OriginalIp string
-	QueryValue url.Values
-	UserAgent  string
-	Headers    http.Header
-	ReqBody    string
-	RespCode   int
+	Host          string
+	Path          string
+	Method        string
+	Ip            string
+	OriginalIp    string
+	QueryValue    url.Values
+	UserAgent     string
+	Headers       http.Header
+	ReqBody       string
+	XForwardedFor string
+	RespCode      int
 }
 
 type CloudflareData struct {
 	//see https://support.cloudflare.com/hc/en-us/articles/200170986-How-does-Cloudflare-handle-HTTP-Request-headers-
 	Country         string
 	ConnectingIp    string
-	XForwardedFor   string
 	XForwardedProto string
 	CFRay           string
 }
@@ -81,7 +81,6 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 			CFRay:           r.Header.Get("Cf-Ray"),
 			Country:         r.Header.Get("Cf-Ipcountry"),
 			ConnectingIp:    r.Header.Get("Cf-Connecting-Ip"),
-			XForwardedFor:   r.Header.Get("X-Forwarded-For"),
 			XForwardedProto: r.Header.Get("X-Forwarded-Proto"),
 		}
 		//try to fetch proper ip from cloudflare data
@@ -95,6 +94,9 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 	obj.Data.Path = r.URL.Path
 	obj.Data.Method = r.Method
 	obj.Data.Ip = obj.Ip
+	if v := r.Header.Get("X-Forwarded-For"); v != "" {
+		obj.Data.XForwardedFor = r.Header.Get("X-Forwarded-For")
+	}
 
 	//copy headers
 	obj.Data.Headers = make(http.Header, len(r.Header))
@@ -120,7 +122,7 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 	}
 	//prepare query part
 	if len(r.URL.RawQuery) > 0 {
-		if qv, err := url.ParseQuery(r.URL.RawQuery); err != nil {
+		if qv, err := url.ParseQuery(r.URL.RawQuery); err == nil {
 			obj.Data.QueryValue = qv
 		}
 	}
