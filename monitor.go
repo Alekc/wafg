@@ -13,4 +13,5 @@ const (
 func init() {
 	perfCounters.Set(COUNTER_CONNECTIONS,new(expvar.Int))
 	perfCounters.Set(COUNTER_BLOCKED_CONNECTIONS,new(expvar.Int))
+	perfCounters.Set(COUNTER_BANS,new(expvar.Int))
 }

@@ -41,6 +41,7 @@ func createNewRemoteClient(ip string) *RemoteClient {
 //ban user for default time.
 func (self *RemoteClient) Ban() {
 	log.DebugfWithFields("Banned", LogFields{"ip": self.Ip})
+	perfCounters.Add(COUNTER_BANS, 1)
 
 	//get initial point for the ban
 	banStart := time.Now()
