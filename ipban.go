@@ -1,18 +1,17 @@
-package waf
+package wafg
 
 import (
 	"time"
-	"net"
 	"sync"
 )
 
 type IpBanManager struct {
-	sync.Mutex
+	sync.RWMutex
 	bannedEntries map[string]time.Time
 	whiteList     map[string]int
 }
 
-//Get instance of Manager
+//Get serverInstance of Manager
 func createNewIpBanManagerInstance() *IpBanManager {
 	obj := new(IpBanManager)
 	obj.bannedEntries = make(map[string]time.Time)
@@ -22,28 +21,27 @@ func createNewIpBanManagerInstance() *IpBanManager {
 }
 
 func WhiteList(ip string) {
-
+	panic("todo")
 }
 
-func (self *IpBanManager) BlackList(ip string, bannedTill time.Time){
+func (self *IpBanManager) BlackList(ip string, bannedTill time.Time) {
 	self.Lock()
 	self.bannedEntries[ip] = bannedTill
 	self.Unlock()
 }
 
 //Checks against white list and black list if ip is allowed to connect at all
-func (self *IpBanManager) IsBlocked(ip net.IP) bool {
+func (self *IpBanManager) IsBlocked(ip string) bool {
 	self.Lock()
 	defer self.Unlock()
 	
-	ipString := ip.String()
-	if entry, ok := self.bannedEntries[ipString]; ok {
+	if entry, ok := self.bannedEntries[ip]; ok {
 		//we have an entry and it's still valid
 		if time.Now().Before(entry) {
 			return true
 		}
 		//entry has expired, remove it from the list block
-		delete(self.bannedEntries, ipString)
+		delete(self.bannedEntries, ip)
 	}
 	return false
 }
