@@ -56,7 +56,8 @@ func newServerInstance() *WafServer {
 	}
 
 	server.Callbacks = &Callbacks{
-		afterServed:make([]func(context *Context),0),
+		afterServed: make([]func(context *Context), 0),
+		afterBan:    make([]func(rc *RemoteClient), 0),
 	}
 
 	return server
@@ -89,7 +90,7 @@ func (ws *WafServer) initLogger() {
 	log.Hooks = make(logrus.LevelHooks)
 	log.Level = logrus.DebugLevel
 
-	if (!ws.Settings.LogEnabled){
+	if (!ws.Settings.LogEnabled) {
 		log.Out = ioutil.Discard
 	}
 	//log.Formatter = &logrus.JSONFormatter{}

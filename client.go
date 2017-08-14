@@ -42,7 +42,6 @@ func createNewRemoteClient(ip string) *RemoteClient {
 func (self *RemoteClient) Ban() {
 	log.DebugfWithFields("Banned", LogFields{"ip": self.Ip})
 
-
 	//get initial point for the ban
 	banStart := time.Now()
 	if banStart.Before(self.BannedTill) {
@@ -52,6 +51,13 @@ func (self *RemoteClient) Ban() {
 	//update banned till on server and client
 	self.BannedTill = banStart.Add(time.Duration(serverInstance.Settings.BanTimeSec) * time.Second)
 	serverInstance.IpBanManager.BlackList(self.Ip, self.BannedTill)
+
+	//trigger eventual onban callbacks
+	if cb := serverInstance.Callbacks.getAfterBanCallbacks(); len(cb) > 0{
+		for _,f := range cb{
+			f(self)
+		}
+	}
 }
 
 //Unban user
