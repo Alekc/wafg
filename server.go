@@ -17,7 +17,6 @@ type WafServer struct {
 }
 
 /**************************/
-
 func (ws *WafServer) ServeForbidden(w http.ResponseWriter) {
 	perfCounters.Add(COUNTER_BLOCKED_CONNECTIONS, 1)
 	w.WriteHeader(403)
@@ -33,25 +32,27 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := newContext(&w, r)
 	defer ws.triggerAfterServed(ctx)
 
-	//todo: if whitelist, then serve content
+	//If client is not whitelisted, continue with analysis
+	if !ws.IpBanManager.IsWhiteListed(ctx.Ip) {
 
-	//get the ip and check if we are banned already
-	if ws.IpBanManager.IsBlocked(ctx.Ip) {
-		log.DebugfWithFields("Refused connection on blocked ip", LogFields{"ip": ctx.Ip})
-		ws.ServeForbidden(w)
-		return
+		//get the ip and check if we are banned already
+		if ws.IpBanManager.IsBlocked(ctx.Ip) {
+			log.DebugfWithFields("Refused connection on blocked ip", LogFields{"ip": ctx.Ip})
+			ws.ServeForbidden(w)
+			return
+		}
+
+		//get the client or create it if it doesn't exists
+		client := ws.getClient(ctx.Ip)
+		if !client.CanServe(ctx) {
+			ws.ServeForbidden(w)
+			return
+		}
+
+		//we are good to go
+		ctx.Timers.BeginRequest = time.Now()
+		ctx.Refused = false
 	}
-
-	//get the client or create it if it doesn't exists
-	client := ws.getClient(ctx.Ip)
-	if !client.CanServe(ctx) {
-		ws.ServeForbidden(w)
-		return
-	}
-
-	//we are good to go
-	ctx.Timers.BeginRequest = time.Now()
-	ctx.Refused = false
 
 	//create reverse proxy and execute request
 	logRequest(ctx)
