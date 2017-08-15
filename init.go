@@ -90,7 +90,7 @@ func (ws *WafServer) initLogger() {
 	log.Hooks = make(logrus.LevelHooks)
 	log.Level = logrus.DebugLevel
 
-	if (!ws.Settings.LogEnabled) {
+	if !ws.Settings.LogEnabled {
 		log.Out = ioutil.Discard
 	}
 	//log.Formatter = &logrus.JSONFormatter{}
