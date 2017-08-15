@@ -28,17 +28,17 @@ func newServerInstance() *WafServer {
 	//pub
 	server.Settings = loadSettings()
 	server.IpBanManager = createNewIpBanManagerInstance()
-
+	
 	//prv
 	server.remoteClients = make(map[string]*RemoteClient)
-
+	
 	//https://stackoverflow.com/questions/40624248/golang-force-http-request-to-specific-ip-similar-to-curl-resolve
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
 		DualStack: true,
 	}
-
+	
 	server.httpCLient = &http.Client{
 		Timeout: time.Second * 30,
 		Transport: &http.Transport{
@@ -54,12 +54,12 @@ func newServerInstance() *WafServer {
 			ExpectContinueTimeout: 1 * time.Second,
 		},
 	}
-
+	
 	server.Callbacks = &Callbacks{
 		afterServed: make([]func(context *Context), 0),
 		afterBan:    make([]func(rc *RemoteClient), 0),
 	}
-
+	
 	return server
 }
 
@@ -67,19 +67,19 @@ func newServerInstance() *WafServer {
 func (ws *WafServer) Start() {
 	ws.initLogger()
 	go ws.clientCleaner()
-
+	
 	//handler for expvar
 	go http.ListenAndServe(":7777", nil)
-
+	
 	//custom andler for everything else
-
+	
 	go http.ListenAndServeTLS(
 		ws.Settings.SSLListenAddress,
 		ws.Settings.SSLCertPath,
 		ws.Settings.SSLKeyPath,
 		ws,
 	)
-
+	
 	log.Fatal(http.ListenAndServe(ws.Settings.ListenAddress, ws))
 }
 
@@ -88,8 +88,8 @@ func (ws *WafServer) initLogger() {
 	log.Out = os.Stderr
 	log.Formatter = new(logrus.TextFormatter)
 	log.Hooks = make(logrus.LevelHooks)
-	log.Level = logrus.DebugLevel
-
+	log.Level = ws.Settings.LogLevel
+	
 	if !ws.Settings.LogEnabled {
 		log.Out = ioutil.Discard
 	}
@@ -105,7 +105,7 @@ func (ws *WafServer) clientCleaner() {
 		for key, rc := range ws.remoteClients {
 			if rc.LastActive.Before(cutoff) {
 				log.DebugfWithFields("Removing Client due to inactivity", LogFields{"ip": key})
-
+				
 				delete(ws.remoteClients, key)
 			}
 		}

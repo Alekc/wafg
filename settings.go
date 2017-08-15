@@ -1,5 +1,7 @@
 package wafg
 
+import "github.com/sirupsen/logrus"
+
 type Settings struct {
 	//SSl related settings
 	SSLEnabled       bool
@@ -11,7 +13,10 @@ type Settings struct {
 	ListenAddress     string
 	UpstreamAddress   string
 	CloudflareSupport bool
-	LogEnabled        bool
+	
+	//Log Settings
+	LogEnabled bool
+	LogLevel   logrus.Level
 	
 	//Request rate settings and ban settings
 	GlobalRequestRatePeriod     int64 // default duration of observation window for all request (seconds)
@@ -31,8 +36,9 @@ func loadSettings() Settings {
 		MaxGlobalRequestRate:           100,
 		CloudflareSupport:              false,
 		UpstreamAddress:                "",
-		LogEnabled:                     true,
 		SSLEnabled:                     false,
+		LogEnabled:                     true,
+		LogLevel:                       logrus.InfoLevel,
 		SSLCertPath:                    "",
 		SSLKeyPath:                     "",
 		CleanClientsAfterSecInactivity: 30,
