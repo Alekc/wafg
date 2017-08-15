@@ -99,7 +99,7 @@ func (ws *WafServer) initLogger() {
 //removes obsolete clients
 func (ws *WafServer) clientCleaner() {
 	c := time.Tick(30 * time.Second)
-	for _ = range c {
+	for range c {
 		cutoff := time.Now().Add(-time.Duration(ws.Settings.CleanClientsAfterSecInactivity) * time.Minute)
 		ws.Lock()
 		for key, rc := range ws.remoteClients {
