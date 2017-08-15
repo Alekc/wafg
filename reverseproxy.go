@@ -51,6 +51,21 @@ type ReverseProxy struct {
 	BufferPool BufferPool
 }
 
+//Creates new MultiHostReverseProxy
+func NewMultiHostReverseProxy(origRequest *http.Request) *ReverseProxy {
+	director := func(req *http.Request) {
+		req.URL.Scheme = "http"
+		req.URL.Host = origRequest.Host
+		req.URL.Path = origRequest.URL.Path
+		req.URL.RawQuery = origRequest.URL.RawQuery
+		if _, ok := req.Header["User-Agent"]; !ok {
+			// explicitly disable User-Agent so it's not set to default value
+			req.Header.Set("User-Agent", "")
+		}
+	}
+	return &ReverseProxy{Director: director}
+}
+
 // A BufferPool is an interface for getting and returning temporary
 // byte slices for use by io.CopyBuffer.
 type BufferPool interface {

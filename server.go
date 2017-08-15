@@ -88,25 +88,12 @@ func (ws WafServer) getClient(ip string) *RemoteClient {
 	return client
 }
 
-func NewMultiHostReverseProxy(origRequest *http.Request) *ReverseProxy {
-	director := func(req *http.Request) {
-		req.URL.Scheme = "http"
-		req.URL.Host = origRequest.Host
-		req.URL.Path = origRequest.URL.Path
-		req.URL.RawQuery = origRequest.URL.RawQuery
-		if _, ok := req.Header["User-Agent"]; !ok {
-			// explicitly disable User-Agent so it's not set to default value
-			req.Header.Set("User-Agent", "")
-		}
-	}
-	return &ReverseProxy{Director: director}
-}
 
 func logRequest(ctx *Context) {
 	ctx.Timers.Served = time.Now()
 	
 	log.Debugf(
-		`%s - [%s] - %s %s [%dms] [%dms]`,
+		`%s - [%s] - %s %s [%dms] [%dns]`,
 		ctx.Ip,
 		time.Now().Format("2006-01-02 15:04:05"),
 		ctx.Data.Method,
