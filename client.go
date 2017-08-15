@@ -99,7 +99,7 @@ func (rc *RemoteClient) CanServe(ctx *Context) bool {
 	
 	//check if rate is too high
 	if counter.Rate() > serverInstance.Settings.MaxRequestsForSameUrl {
-		log.DebugfWithFields(
+		log.InfoWithFields(
 			"Client exceeded request rate on",
 			LogFields{
 				"ip":   ctx.Data.Ip,

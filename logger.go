@@ -36,6 +36,9 @@ func init() {
 
 func (self *customLog) InfofWithFields(format string, fields LogFields, args ...interface{}) {
 	log.WithFields(logrus.Fields(fields)).Infof(format, args)
+}
+func (self *customLog) InfoWithFields(format string, fields LogFields) {
+	log.WithFields(logrus.Fields(fields)).Info(format)
 
 }
 func (self *customLog) DebugfWithFields(format string, fields LogFields, args ...interface{}) {
