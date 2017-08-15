@@ -119,7 +119,7 @@ func (c *runOnFirstRead) Read(bs []byte) (int, error) {
 func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 	req := ctx.OrigRequest
 	rw := *ctx.OrigWriter
-
+	
 	transport := p.Transport
 	if transport == nil {
 		transport = http.DefaultTransport
@@ -192,8 +192,25 @@ func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 	res, err := transport.RoundTrip(outreq)
 	ctx.Timers.ReceivedResponse = time.Now()
 	ctx.Data.RespCode = res.StatusCode
-
-	if err != nil {
+	
+	//add status code to stats
+	if err == nil {
+		switch {
+		case res.StatusCode >= 200 && res.StatusCode < 299:
+			perfCounters.Add(COUNTER_STATUS_2XX, 1)
+			break
+		case res.StatusCode >= 300 && res.StatusCode < 399:
+			perfCounters.Add(COUNTER_STATUS_3XX, 1)
+			break
+		case res.StatusCode >= 400 && res.StatusCode < 499:
+			perfCounters.Add(COUNTER_STATUS_4XX, 1)
+			break
+		case res.StatusCode >= 500 && res.StatusCode < 599:
+			perfCounters.Add(COUNTER_STATUS_5XX, 1)
+			break
+		}
+	} else {
+		perfCounters.Add(COUNTER_STATUS_5XX, 1) //todo decide if move to err?
 		p.logf("http: proxy error: %v", err)
 		rw.WriteHeader(http.StatusBadGateway)
 		return
