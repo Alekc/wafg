@@ -30,7 +30,7 @@ func init() {
 	//log.SetLevel(log.DebugLevel)
 }
 
-//func (self *customLog) Infof(format string, args ...interface{}) {
+//func (rc *customLog) Infof(format string, args ...interface{}) {
 //	log.Infof(format, args...)
 //}
 
@@ -46,7 +46,7 @@ func (self *customLog) DebugfWithFields(format string, fields LogFields, args ..
 	}
 }
 
-//func (self *customLog) Debugf(format string, args ...interface{}) {
+//func (rc *customLog) Debugf(format string, args ...interface{}) {
 //	log.Debugf(format, args...)
 //}
 
@@ -57,10 +57,10 @@ func (self *customLog) WarningFWithFields(format string, fields LogFields, args 
 	log.WithFields(logrus.Fields(fields)).Warningf(format, args)
 }
 
-//func (self *customLog) Warningf(format string, args ...interface{}) {
+//func (rc *customLog) Warningf(format string, args ...interface{}) {
 //	log.Warningf(format, args...)
 //}
-//func (self *customLog) Errorf(format string, args ...interface{}) {
+//func (rc *customLog) Errorf(format string, args ...interface{}) {
 //	log.Errorf(format, args...)
 //}
 func (self *customLog) ErrorfWithFields(format string, fields LogFields, args ...interface{}) {

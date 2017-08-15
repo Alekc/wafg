@@ -8,7 +8,7 @@ import (
 
 type RemoteClient struct {
 	sync.RWMutex
-
+	
 	//counter for request rate
 	ReqCounter *ratecounter.RateCounter
 	Ip         string
@@ -17,86 +17,88 @@ type RemoteClient struct {
 	UrlHistory map[string]*ratecounter.RateCounter
 }
 
-//checks if client is banned or not
-func (self *RemoteClient) IsBanned() bool {
-	return time.Now().Before(self.BannedTill)
-}
-
 //create new instance
 func createNewRemoteClient(ip string) *RemoteClient {
 	obj := new(RemoteClient)
 	obj.LastActive = time.Now()
-
+	
 	//define new requestCounter
 	obj.ReqCounter = ratecounter.NewRateCounter(time.Duration(serverInstance.Settings.GlobalRequestRatePeriod) * time.Second)
 	obj.UrlHistory = make(map[string]*ratecounter.RateCounter)
-
+	
 	//set BannedTill time to the past (in order to have valid value)
 	obj.BannedTill = time.Now().Add(-1 * time.Hour)
 	obj.Ip = ip
-
+	
 	return obj
 }
 
-//ban user for default time.
-func (self *RemoteClient) Ban() {
-	log.DebugfWithFields("Banned", LogFields{"ip": self.Ip})
-	perfCounters.Add(COUNTER_BANS, 1)
+//checks if client is banned or not
+func (rc *RemoteClient) IsBanned() bool {
+	return time.Now().Before(rc.BannedTill)
+}
 
+//ban user for default time.
+func (rc *RemoteClient) Ban() {
+	log.DebugfWithFields("Banned", LogFields{"ip": rc.Ip})
+	perfCounters.Add(COUNTER_BANS, 1)
+	
 	//get initial point for the ban
 	banStart := time.Now()
-	if banStart.Before(self.BannedTill) {
-		banStart = self.BannedTill
+	if banStart.Before(rc.BannedTill) {
+		banStart = rc.BannedTill
 	}
-
+	
 	//update banned till on server and client
-	self.BannedTill = banStart.Add(time.Duration(serverInstance.Settings.BanTimeSec) * time.Second)
-	serverInstance.IpBanManager.BlackList(self.Ip, self.BannedTill)
-
-	//trigger eventual onban callbacks
-	if cb := serverInstance.Callbacks.getAfterBanCallbacks(); len(cb) > 0{
-		for _,f := range cb{
-			f(self)
+	rc.BannedTill = banStart.Add(time.Duration(serverInstance.Settings.BanTimeSec) * time.Second)
+	serverInstance.IpBanManager.BlackList(rc.Ip, rc.BannedTill)
+	
+	//trigger eventual onBan callbacks
+	if cb := serverInstance.Callbacks.getAfterBanCallbacks(); len(cb) > 0 {
+		for _, f := range cb {
+			f(rc)
 		}
 	}
 }
 
-//Unban user
-func (self *RemoteClient) UnBan() {
-	self.BannedTill = time.Now().Add(time.Minute * -2)
+//UnBan user
+func (rc *RemoteClient) UnBan() {
+	rc.BannedTill = time.Now().Add(time.Minute * -2)
 }
 
 //Check if this client can be served at all
-func (self *RemoteClient) CanServe(ctx *Context) bool {
+func (rc *RemoteClient) CanServe(ctx *Context) bool {
 	//set the last active position
-	self.LastActive = time.Now()
-
+	rc.LastActive = time.Now()
+	
 	//check for global request rates.
-	self.ReqCounter.Incr(1)
-
+	rc.ReqCounter.Incr(1)
+	
 	//check if global request rate is too high
-	requestRate := self.ReqCounter.Rate()
+	requestRate := rc.ReqCounter.Rate()
 	if requestRate > serverInstance.Settings.MaxGlobalRequestRate {
-		log.Debugf("%s - Request rate too high [%d]", self.Ip, requestRate)
+		log.InfofWithFields("Client connection rate is too high",
+			LogFields{"ip": rc.Ip, "req_rate": requestRate})
+		
 		// bad boy. Increase his banned time.
 		// In this mode we will not risk to unban them while they are still hammering us
 		// It is a potential race condition, but in this point we do not care if we are off by couple of ms.
-
-		self.Ban()
+		
+		rc.Ban()
 		return false
 	}
-
-	//if request rate is ok but we are banned, return false early
-	if self.IsBanned() {
+	
+	//if request rate is ok but we are banned, refuse anyway
+	if rc.IsBanned() {
 		return false
 	}
-
+	
 	//get request rate for this particular combination of host/url
-	counter := self.getUrlCounter(ctx)
+	counter := rc.getUrlCounter(ctx)
 	counter.Incr(1)
-
+	
 	//check if rate is too high
-	if counter.Rate() > 10 {
+	if counter.Rate() > serverInstance.Settings.MaxRequestsForSameUrl {
 		log.DebugfWithFields(
 			"Client exceeded request rate on",
 			LogFields{
@@ -105,29 +107,31 @@ func (self *RemoteClient) CanServe(ctx *Context) bool {
 				"path": ctx.Data.Path,
 			},
 		)
-		self.Ban()
+		rc.Ban()
 		return false
 	}
-
+	
 	return true
 }
 
-func (self *RemoteClient) getUrlCounter(ctx *Context) *ratecounter.RateCounter {
+func (rc *RemoteClient) getUrlCounter(ctx *Context) *ratecounter.RateCounter {
 	//todo: add query param if required from config
 	md5Hash := GetMD5Hash(ctx.OrigRequest.Host + ctx.OrigRequest.URL.Path)
-
-	self.RLock()
-	urlHistory, ok := self.UrlHistory[md5Hash];
-	self.RUnlock()
+	
+	//try to get counter for this url in read only lock
+	rc.RLock()
+	urlHistory, ok := rc.UrlHistory[md5Hash]
+	rc.RUnlock()
 	if ok {
 		return urlHistory
 	}
-
-
-	self.Lock()
-	urlHistory = ratecounter.NewRateCounter(10 * time.Second) //todo: settings
-	self.UrlHistory[md5Hash] = urlHistory
-	self.Unlock()
-
+	
+	//potential race condition, but it doesn't matter because in worst case scenario we will miss one reqrate
+	rc.Lock()
+	urlHistory = ratecounter.NewRateCounter(
+		time.Duration(serverInstance.Settings.SameUrlObservationPeriodSec) * time.Second)
+	rc.UrlHistory[md5Hash] = urlHistory
+	rc.Unlock()
+	
 	return urlHistory
 }

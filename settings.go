@@ -6,18 +6,20 @@ type Settings struct {
 	SSLCertPath      string
 	SSLKeyPath       string
 	SSLListenAddress string
-
+	
 	//general settings
 	ListenAddress     string
 	UpstreamAddress   string
 	CloudflareSupport bool
 	LogEnabled        bool
-
+	
 	//Request rate settings and ban settings
-	GlobalRequestRatePeriod int64 // default duration of observation window for all request (seconds)
-	MaxGlobalRequestRate    int64 // what the maximum allowd request rate for
-	BanTimeSec              int64 // how long should the client be banned
-
+	GlobalRequestRatePeriod     int64 // default duration of observation window for all request (seconds)
+	MaxGlobalRequestRate        int64 // what's the maximum allowed request rate for all requests
+	BanTimeSec                  int64 // how long should the client be banned
+	SameUrlObservationPeriodSec int64 // how long will we keep history for the same url requests
+	MaxRequestsForSameUrl       int64 // how many requests vs same url/host can we make during observation timeframe
+	
 	// For how long do you want to keep clients in memory after their last connection
 	CleanClientsAfterSecInactivity int64
 }
@@ -35,6 +37,8 @@ func loadSettings() Settings {
 		SSLKeyPath:                     "",
 		CleanClientsAfterSecInactivity: 30,
 		BanTimeSec:                     300,
+		SameUrlObservationPeriodSec:    10,
+		MaxRequestsForSameUrl:          20,
 	}
 	return obj
 }
