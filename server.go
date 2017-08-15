@@ -37,7 +37,7 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		
 		//get the ip and check if we are banned already
 		if ws.IpBanManager.IsBlocked(ctx.Ip) {
-			log.DebugfWithFields("Refused connection on blocked ip", LogFields{"ip": ctx.Ip})
+			log.DebugfWithFields("Refused connection", LogFields{"ip": ctx.Ip})
 			ws.ServeForbidden(w)
 			return
 		}
