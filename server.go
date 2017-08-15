@@ -28,35 +28,38 @@ func (ws *WafServer) ServeForbidden(w http.ResponseWriter) {
 //analyze the request
 func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	perfCounters.Add(COUNTER_CONNECTIONS, 1)
-
+	
 	ctx := newContext(&w, r)
 	defer ws.triggerAfterServed(ctx)
-
+	
 	//If client is not whitelisted, continue with analysis
 	if !ws.IpBanManager.IsWhiteListed(ctx.Ip) {
-
+		
 		//get the ip and check if we are banned already
 		if ws.IpBanManager.IsBlocked(ctx.Ip) {
 			log.DebugfWithFields("Refused connection on blocked ip", LogFields{"ip": ctx.Ip})
 			ws.ServeForbidden(w)
 			return
 		}
-
+		
 		//get the client or create it if it doesn't exists
 		client := ws.getClient(ctx.Ip)
 		if !client.CanServe(ctx) {
 			ws.ServeForbidden(w)
 			return
 		}
-
+		
 		//we are good to go
 		ctx.Timers.BeginRequest = time.Now()
 		ctx.Refused = false
+	} else {
+		//log whitelisted connection
+		perfCounters.Add(COUNTER_WHITELISTED_CONNECTIONS, 1)
 	}
-
+	
 	//create reverse proxy and execute request
 	logRequest(ctx)
-
+	
 	mhrp := NewMultiHostReverseProxy(r)
 	mhrp.Transport = ws.httpCLient.Transport
 	mhrp.ServeHTTP(ctx)
@@ -101,7 +104,7 @@ func NewMultiHostReverseProxy(origRequest *http.Request) *ReverseProxy {
 
 func logRequest(ctx *Context) {
 	ctx.Timers.Served = time.Now()
-
+	
 	log.Debugf(
 		`%s - [%s] - %s %s [%dms] [%dms]`,
 		ctx.Ip,
