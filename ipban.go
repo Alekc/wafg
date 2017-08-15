@@ -21,6 +21,7 @@ func createNewIpBanManagerInstance() *IpBanManager {
 }
 
 //WhiteLists ip
+//todo: add ability to whitelist by classes and not by single ip
 func (ibm *IpBanManager) WhiteList(ip string) {
 	ibm.Lock()
 	ibm.whiteList[ip] = 0
