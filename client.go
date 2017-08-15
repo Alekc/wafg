@@ -105,6 +105,8 @@ func (rc *RemoteClient) CanServe(ctx *Context) bool {
 				"ip":   ctx.Data.Ip,
 				"host": ctx.Data.Host,
 				"path": ctx.Data.Path,
+				"req_rate": counter.Rate(),
+				"url": ctx.Data.Path, //todo: add full url to context
 			},
 		)
 		rc.Ban()
