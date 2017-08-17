@@ -28,6 +28,7 @@ func newServerInstance() *WafServer {
 	//pub
 	server.Settings = loadSettings()
 	server.IpBanManager = createNewIpBanManagerInstance()
+	server.Rules = createNewRulesManager()
 	
 	//prv
 	server.remoteClients = make(map[string]*RemoteClient)
@@ -80,7 +81,8 @@ func (ws *WafServer) Start() {
 		ws,
 	)
 	
-	log.Fatal(http.ListenAndServe(ws.Settings.ListenAddress, ws))
+	err := http.ListenAndServe(ws.Settings.ListenAddress, ws)
+	panic(err)
 }
 
 func (ws *WafServer) initLogger() {

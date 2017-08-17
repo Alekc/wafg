@@ -110,7 +110,7 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 	//define UserAgent
 	obj.Data.UserAgent = obj.Data.Headers.Get("User-Agent")
 	obj.Data.Headers.Del("User-Agent")
-	//r.Header.Get("User-Agent")
+	//pr.Header.Get("User-Agent")
 
 	//in case cloudflare support is enabled store original ip (just in case).
 	if serverInstance.Settings.CloudflareSupport {
@@ -130,10 +130,10 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 	if obj.Data.Method == "POST" || obj.Data.Method == "PUT" || obj.Data.Method == "PATCH" {
 		//note: there could be some issues with huge body sizes.
 		//not sure how to deal with it for now, maybe put a limit to file size?
-		//buf, _ := ioutil.ReadAll(r.ReqBody)
+		//buf, _ := ioutil.ReadAll(pr.ReqBody)
 		//obj.Data.ReqBody = string(buf)
 		//
-		//r.ReqBody = ioutil.NopCloser(bytes.NewBuffer(buf))
+		//pr.ReqBody = ioutil.NopCloser(bytes.NewBuffer(buf))
 
 		if r.Body != nil {
 			bodyBytes, _ := ioutil.ReadAll(r.Body)

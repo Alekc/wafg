@@ -14,6 +14,7 @@ type WafServer struct {
 	IpBanManager  *IpBanManager
 	httpCLient    *http.Client
 	Callbacks     *Callbacks
+	Rules         *RulesManager
 }
 
 /**************************/
@@ -32,35 +33,43 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := newContext(&w, r)
 	defer ws.triggerAfterServed(ctx)
 	
-	//If client is not whitelisted, continue with analysis
-	if !ws.IpBanManager.IsWhiteListed(ctx.Ip) {
-		
-		//get the ip and check if we are banned already
-		if ws.IpBanManager.IsBlocked(ctx.Ip) {
-			log.DebugfWithFields("Refused connection", LogFields{"ip": ctx.Ip})
-			ws.ServeForbidden(w)
-			return
-		}
-		
-		//get the client or create it if it doesn't exists
-		client := ws.getClient(ctx.Ip)
-		if !client.CanServe(ctx) {
-			ws.ServeForbidden(w)
-			return
-		}
-		
-		//we are good to go
-		ctx.Timers.BeginRequest = time.Now()
-		ctx.Refused = false
-	} else {
-		//log whitelisted connection
+	//get appropriate pagerules
+	rulesSet := ws.Rules.GetMatchedRules(ctx)
+	
+	//If client is whitelisted, proceed with request ignoring everything else
+	if ws.IpBanManager.IsWhiteListed(ctx.Ip) || ws.Rules.RuleSetHasWhitelist(rulesSet){
 		perfCounters.Add(COUNTER_WHITELISTED_CONNECTIONS, 1)
+		ws.proceed(ctx)
+		return
 	}
 	
+	//get the ip and check if we are banned already
+	if ws.IpBanManager.IsBlocked(ctx.Ip) {
+		log.DebugfWithFields("Refused connection", LogFields{"ip": ctx.Ip})
+		ws.ServeForbidden(w)
+		return
+	}
+	
+	//get the client or create it if it doesn't exists
+	client := ws.getClient(ctx.Ip)
+	if !client.CanServe(ctx) {
+		ws.ServeForbidden(w)
+		return
+	}
+	
+	//we are good to go
+	ctx.Timers.BeginRequest = time.Now()
+	ctx.Refused = false
+	
+	ws.proceed(ctx)
+}
+
+// We have passed all checks, proceed with request.
+func (ws *WafServer) proceed(ctx *Context) {
 	//create reverse proxy and execute request
 	logRequest(ctx)
 	
-	mhrp := NewMultiHostReverseProxy(r)
+	mhrp := NewMultiHostReverseProxy(ctx.OrigRequest)
 	mhrp.Transport = ws.httpCLient.Transport
 	mhrp.ServeHTTP(ctx)
 }
@@ -87,7 +96,6 @@ func (ws WafServer) getClient(ip string) *RemoteClient {
 	ws.Unlock()
 	return client
 }
-
 
 func logRequest(ctx *Context) {
 	ctx.Timers.Served = time.Now()
