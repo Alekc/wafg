@@ -59,7 +59,7 @@ func (rm *RulesManager) GetMatchedRules(ctx *Context) []*pageRule {
 }
 
 // Extract matched rules from a slice
-func (rm RulesManager) extractMatchedRulesFromSlice(input, output []*pageRule, ctx *Context) []*pageRule {
+func (rm *RulesManager) extractMatchedRulesFromSlice(input, output []*pageRule, ctx *Context) []*pageRule {
 	for _, rule := range input {
 		if rule.Match(ctx) {
 			output = append(output, rule)

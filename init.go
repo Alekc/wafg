@@ -109,13 +109,13 @@ func (ws *WafServer) clientCleaner() {
 		cutoff := time.Now().Add(-time.Duration(ws.Settings.CleanClientsAfterSecInactivity) * time.Minute)
 		ws.Lock()
 		for key, rc := range ws.remoteClients {
-			rc.Lock()
+			rc.RLock()
 			if rc.LastActive.Before(cutoff) {
 				log.DebugfWithFields("Removing Client due to inactivity", LogFields{"ip": key})
 				
 				delete(ws.remoteClients, key)
 			}
-			rc.Unlock()
+			rc.RUnlock()
 		}
 		ws.Unlock()
 	}
