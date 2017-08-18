@@ -85,7 +85,7 @@ func (ws *WafServer) triggerAfterServed(ctx *Context) {
 }
 
 //Gets (or creates) client from cache
-func (ws WafServer) getClient(ip string) *RemoteClient {
+func (ws *WafServer) getClient(ip string) *RemoteClient {
 	ws.Lock()
 	defer ws.Unlock()
 	var client *RemoteClient
