@@ -46,15 +46,18 @@ func (rc *RemoteClient) Ban() {
 	perfCounters.Add(COUNTER_BANS, 1)
 	
 	//get initial point for the ban
+	rc.Lock()
 	banStart := time.Now()
 	if banStart.Before(rc.BannedTill) {
 		banStart = rc.BannedTill
 	}
 	
 	//update banned till on server and client
-	rc.BannedTill = banStart.Add(time.Duration(serverInstance.Settings.BanTimeSec) * time.Second)
-	serverInstance.IpBanManager.BlackList(rc.Ip, rc.BannedTill)
+	bannedTill := banStart.Add(time.Duration(serverInstance.Settings.BanTimeSec) * time.Second)
+	rc.BannedTill = bannedTill
+	rc.Unlock()
 	
+	serverInstance.IpBanManager.BlackList(rc.Ip, bannedTill)
 	//trigger eventual onBan callbacks
 	if cb := serverInstance.Callbacks.getAfterBanCallbacks(); len(cb) > 0 {
 		for _, f := range cb {
