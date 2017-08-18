@@ -140,11 +140,11 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 }
 
 //Gets url Values (if any)
-func (ct *Context) GetUrlValues() url.Values{
+func (cd *ContextData) GetUrlValues() url.Values{
 	res := make(url.Values,0)
 	
-	if len(ct.Data.RawQuery) > 0 {
-		if qv, err := url.ParseQuery(ct.Data.RawQuery); err == nil {
+	if len(cd.RawQuery) > 0 {
+		if qv, err := url.ParseQuery(cd.RawQuery); err == nil {
 			return qv
 		}
 	}
