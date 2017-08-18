@@ -30,9 +30,6 @@ func (ws *WafServer) ServeForbidden(w http.ResponseWriter) {
 func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	perfCounters.Add(COUNTER_CONNECTIONS, 1)
 	
-	//todo: remove
-	log.InfoWithFields("New connection",LogFields{"uri":r.RequestURI})
-	
 	ctx := newContext(&w, r)
 	defer ws.triggerAfterServed(ctx)
 	
