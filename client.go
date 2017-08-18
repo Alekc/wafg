@@ -35,6 +35,8 @@ func createNewRemoteClient(ip string) *RemoteClient {
 
 //checks if client is banned or not
 func (rc *RemoteClient) IsBanned() bool {
+	rc.RLock()
+	defer rc.RUnlock()
 	return time.Now().Before(rc.BannedTill)
 }
 
