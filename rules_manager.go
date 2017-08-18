@@ -25,7 +25,7 @@ func (RulesManager) RuleSetHasWhitelist(rules []*pageRule) bool {
 
 // Gets maximum request rate for the request given active rules.
 // Rules priority are LIFO (newest rules have priority)
-func (RulesManager) GetMaximumReqRateForSameRule(rules []*pageRule) int64 {
+func (rm *RulesManager) GetMaximumReqRateForSameRule(rules []*pageRule) int64 {
 	maxReqSameUrl := serverInstance.Settings.MaxRequestsForSameUrl
 	for _, v := range rules {
 		if v.Action == actionAlterRates {
