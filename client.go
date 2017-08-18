@@ -68,11 +68,14 @@ func (rc *RemoteClient) UnBan() {
 
 //Check if this client can be served at all
 func (rc *RemoteClient) CanServe(ctx *Context, activeRules []*pageRule) bool {
+	rc.Lock()
 	//set the last active position
 	rc.LastActive = time.Now()
+	rc.Unlock()
 	
 	//check for global request rates.
 	rc.ReqCounter.Incr(1)
+	
 	
 	//check if global request rate is too high
 	requestRate := rc.ReqCounter.Rate()
