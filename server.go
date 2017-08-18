@@ -18,10 +18,12 @@ type WafServer struct {
 }
 
 /**************************/
-func (ws *WafServer) ServeForbidden(w http.ResponseWriter) {
+func (ws *WafServer) ServeForbidden(ctx *Context) {
 	perfCounters.Add(COUNTER_BLOCKED_CONNECTIONS, 1)
+	w := *ctx.OrigWriter
 	w.WriteHeader(403)
 	w.Write([]byte("Forbidden"))
+	ctx.Data.RespCode = 403
 }
 
 //todo: remove old clients
@@ -46,14 +48,14 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//get the ip and check if we are banned already
 	if ws.IpBanManager.IsBlocked(ctx.Ip) {
 		log.DebugfWithFields("Refused connection", LogFields{"ip": ctx.Ip})
-		ws.ServeForbidden(w)
+		ws.ServeForbidden(ctx)
 		return
 	}
 	
 	//get the client or create it if it doesn't exists
 	client := ws.getClient(ctx.Ip)
 	if !client.CanServe(ctx,rulesSet) {
-		ws.ServeForbidden(w)
+		ws.ServeForbidden(ctx)
 		return
 	}
 	
