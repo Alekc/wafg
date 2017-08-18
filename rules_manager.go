@@ -23,6 +23,20 @@ func (RulesManager) RuleSetHasWhitelist(rules []*pageRule) bool {
 	return false
 }
 
+// Gets maximum request rate for the request given active rules.
+// Rules priority are LIFO (newest rules have priority)
+func (RulesManager) GetMaximumReqRateForSameRule(rules []*pageRule) int64 {
+	maxReqSameUrl := serverInstance.Settings.MaxRequestsForSameUrl
+	for _, v := range rules {
+		if v.Action == actionAlterRates {
+			if val, ok := v.ActionValue.(int); ok {
+				maxReqSameUrl = int64(val)
+			}
+		}
+	}
+	return maxReqSameUrl
+}
+
 // Creates new instance of page rule (without adding it to the active list of urls)
 func (RulesManager) New(name, description string) *pageRule {
 	obj := &pageRule{
@@ -65,6 +79,6 @@ func (rm *RulesManager) AddRule(rule *pageRule) {
 		rm.rateRules = append(rm.rateRules, rule)
 		break
 	}
-
+	
 	rm.Unlock()
 }

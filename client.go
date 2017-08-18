@@ -67,7 +67,7 @@ func (rc *RemoteClient) UnBan() {
 }
 
 //Check if this client can be served at all
-func (rc *RemoteClient) CanServe(ctx *Context) bool {
+func (rc *RemoteClient) CanServe(ctx *Context, activeRules []*pageRule) bool {
 	//set the last active position
 	rc.LastActive = time.Now()
 	
@@ -97,16 +97,16 @@ func (rc *RemoteClient) CanServe(ctx *Context) bool {
 	counter := rc.getUrlCounter(ctx)
 	counter.Incr(1)
 	
-	//check if rate is too high
-	if counter.Rate() > serverInstance.Settings.MaxRequestsForSameUrl {
+	//determine maximum requestRate for the same ur
+	if counter.Rate() > serverInstance.Rules.GetMaximumReqRateForSameRule(activeRules) {
 		log.InfoWithFields(
 			"Client exceeded request rate on",
 			LogFields{
-				"ip":   ctx.Data.Ip,
-				"host": ctx.Data.Host,
-				"path": ctx.Data.Path,
+				"ip":       ctx.Data.Ip,
+				"host":     ctx.Data.Host,
+				"path":     ctx.Data.Path,
 				"req_rate": counter.Rate(),
-				"url": ctx.Data.Path, //todo: add full url to context
+				"url":      ctx.Data.Path, //todo: add full url to context
 			},
 		)
 		rc.Ban()

@@ -52,7 +52,7 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	
 	//get the client or create it if it doesn't exists
 	client := ws.getClient(ctx.Ip)
-	if !client.CanServe(ctx) {
+	if !client.CanServe(ctx,rulesSet) {
 		ws.ServeForbidden(w)
 		return
 	}
