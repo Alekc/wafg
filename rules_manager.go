@@ -14,7 +14,7 @@ func createNewRulesManager() *RulesManager {
 }
 
 //checks if a given ruleset contains white list rule (which would have priority over anything else)
-func (RulesManager) RuleSetHasWhitelist(rules []*pageRule) bool {
+func (rm *RulesManager) RuleSetHasWhitelist(rules []*pageRule) bool {
 	for _, v := range rules {
 		if v.Action == actionWhitelist {
 			return true
@@ -38,7 +38,7 @@ func (rm *RulesManager) GetMaximumReqRateForSameRule(rules []*pageRule) int64 {
 }
 
 // Creates new instance of page rule (without adding it to the active list of urls)
-func (RulesManager) New(name, description string) *pageRule {
+func (rm *RulesManager) New(name, description string) *pageRule {
 	obj := &pageRule{
 		SearchFor:   make([]searchItem, 0),
 		Name:        name,
@@ -59,7 +59,7 @@ func (rm *RulesManager) GetMatchedRules(ctx *Context) []*pageRule {
 }
 
 // Extract matched rules from a slice
-func (RulesManager) extractMatchedRulesFromSlice(input, output []*pageRule, ctx *Context) []*pageRule {
+func (rm RulesManager) extractMatchedRulesFromSlice(input, output []*pageRule, ctx *Context) []*pageRule {
 	for _, rule := range input {
 		if rule.Match(ctx) {
 			output = append(output, rule)
