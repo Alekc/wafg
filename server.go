@@ -61,13 +61,12 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	
 	//we are good to go
 	ctx.Timers.BeginRequest = time.Now()
-	ctx.Refused = false
-	
 	ws.proceed(ctx)
 }
 
 // We have passed all checks, proceed with request.
 func (ws *WafServer) proceed(ctx *Context) {
+	ctx.Refused = false
 	//create reverse proxy and execute request
 	logRequest(ctx)
 	
