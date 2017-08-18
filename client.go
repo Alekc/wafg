@@ -40,7 +40,7 @@ func (rc *RemoteClient) IsBanned() bool {
 
 //ban user for default time.
 func (rc *RemoteClient) Ban() {
-	log.InfofWithFields("Banned", LogFields{"ip": rc.Ip})
+	log.InfoWithFields("Banned", LogFields{"ip": rc.Ip})
 	perfCounters.Add(COUNTER_BANS, 1)
 	
 	//get initial point for the ban
