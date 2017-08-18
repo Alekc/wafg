@@ -5,10 +5,11 @@ import (
 )
 
 const (
-	searchFieldHost = "host"
-	searchFieldPath = "path"
-	actionWhitelist = "whitelist"
-	actionForbid    = "forbid"
+	searchFieldHost  = "host"
+	searchFieldPath  = "path"
+	actionWhitelist  = "whitelist"
+	actionForbid     = "forbid"
+	actionAlterRates = "alter_rates"
 )
 
 type pageRule struct {
@@ -16,21 +17,12 @@ type pageRule struct {
 	Description string
 	SearchFor   []searchItem
 	Action      string
+	ActionValue interface{}
 }
 
 type searchItem struct {
 	Field     string
 	Condition matcher.Generic
-}
-
-// Create new pageRule instance
-func NewPageRule(name, description string) *pageRule {
-	obj := &pageRule{
-		SearchFor:   make([]searchItem, 0),
-		Name:        name,
-		Description: description,
-	}
-	return obj
 }
 
 // Helper function, a searchItem constructor
@@ -45,7 +37,7 @@ func newSearchItem(field string, matcher matcher.Generic) searchItem {
 // Sadly we DO NOT support for an OR for now (create 2 rules for that).
 func (pr *pageRule) Match(ctx *Context) bool {
 	var foundMatch bool
-	
+
 	for _, searchItem := range pr.SearchFor {
 		foundMatch = true
 		switch searchItem.Field {
@@ -77,4 +69,9 @@ func (pr *pageRule) AddPathMatch(matcher matcher.Generic) {
 //Whitelist this rule (ignore all others)
 func (pr *pageRule) SetActionWhitelist() {
 	pr.Action = actionWhitelist
+}
+
+func (pr *pageRule) SetActionAlterRates(newRate int) {
+	pr.Action = actionAlterRates
+	pr.ActionValue = newRate
 }

@@ -5,6 +5,7 @@ import "sync"
 type RulesManager struct {
 	sync.RWMutex
 	whitelistRules []*pageRule
+	rateRules      []*pageRule
 }
 
 func createNewRulesManager() *RulesManager {
@@ -22,6 +23,16 @@ func (RulesManager) RuleSetHasWhitelist(rules []*pageRule) bool {
 	return false
 }
 
+// Creates new instance of page rule (without adding it to the active list of urls)
+func (RulesManager) New(name, description string) *pageRule {
+	obj := &pageRule{
+		SearchFor:   make([]searchItem, 0),
+		Name:        name,
+		Description: description,
+	}
+	return obj
+}
+
 // Get all matched rules
 // Rules are ordered by their action in following order: Whitelist -> BlackList ->Alter Config
 func (rm *RulesManager) GetMatchedRules(ctx *Context) []*pageRule {
@@ -29,6 +40,7 @@ func (rm *RulesManager) GetMatchedRules(ctx *Context) []*pageRule {
 	defer rm.RUnlock()
 	res := make([]*pageRule, 0)
 	res = rm.extractMatchedRulesFromSlice(rm.whitelistRules, res, ctx)
+	res = rm.extractMatchedRulesFromSlice(rm.rateRules, res, ctx)
 	return res
 }
 
@@ -49,6 +61,10 @@ func (rm *RulesManager) AddRule(rule *pageRule) {
 	case actionWhitelist:
 		rm.whitelistRules = append(rm.whitelistRules, rule)
 		break
+	case actionAlterRates:
+		rm.rateRules = append(rm.rateRules, rule)
+		break
 	}
+
 	rm.Unlock()
 }
