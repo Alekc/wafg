@@ -25,7 +25,7 @@ type ContextData struct {
 	Method        string
 	Ip            string
 	OriginalIp    string
-	QueryValue    url.Values
+	RawQuery      string
 	UserAgent     string
 	Headers       http.Header
 	ReqBody       string
@@ -51,8 +51,7 @@ type ContextTimers struct {
 //create context data
 func createContextData() ContextData {
 	obj := ContextData{}
-	obj.QueryValue = make(url.Values)
-
+	
 	return obj
 }
 
@@ -62,18 +61,18 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 		OrigWriter:  w,
 		Data:        createContextData(),
 		Refused:     true,
-
+		
 		Timers: ContextTimers{
 			CreatedOn:    time.Now(),
 			BeginRequest: time.Now(), //just in order to avoid invalid values later
 		},
 	}
-
+	
 	//find ip
 	if ip := getIPAdress(r); ip != nil {
 		obj.Ip = ip.String()
 	}
-
+	
 	//cloudflare block
 	if serverInstance.Settings.CloudflareSupport {
 		//for now we blindly accept that cloudflare headers are legit, you really should limit by firewall incoming things.
@@ -88,7 +87,7 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 			obj.Ip = newIp.String()
 		}
 	}
-
+	
 	//populate initial data for logging
 	obj.Data.Host = r.Host
 	obj.Data.Path = r.URL.Path
@@ -97,7 +96,7 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 	if v := r.Header.Get("X-Forwarded-For"); v != "" {
 		obj.Data.XForwardedFor = r.Header.Get("X-Forwarded-For")
 	}
-
+	
 	//copy headers
 	obj.Data.Headers = make(http.Header, len(r.Header))
 	for k, vv := range r.Header {
@@ -106,12 +105,12 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 		obj.Data.Headers[k] = vv2
 	}
 	//todo: cookies
-
+	
 	//define UserAgent
 	obj.Data.UserAgent = obj.Data.Headers.Get("User-Agent")
 	obj.Data.Headers.Del("User-Agent")
 	//pr.Header.Get("User-Agent")
-
+	
 	//in case cloudflare support is enabled store original ip (just in case).
 	if serverInstance.Settings.CloudflareSupport {
 		if ip, _, err := net.SplitHostPort(r.RemoteAddr); err != nil {
@@ -120,13 +119,8 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 			obj.Data.OriginalIp = r.RemoteAddr
 		}
 	}
-	//prepare query part
-	if len(r.URL.RawQuery) > 0 {
-		if qv, err := url.ParseQuery(r.URL.RawQuery); err == nil {
-			obj.Data.QueryValue = qv
-		}
-	}
-
+	obj.Data.RawQuery = r.URL.RawQuery
+	
 	if obj.Data.Method == "POST" || obj.Data.Method == "PUT" || obj.Data.Method == "PATCH" {
 		//note: there could be some issues with huge body sizes.
 		//not sure how to deal with it for now, maybe put a limit to file size?
@@ -134,7 +128,7 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 		//obj.Data.ReqBody = string(buf)
 		//
 		//pr.ReqBody = ioutil.NopCloser(bytes.NewBuffer(buf))
-
+		
 		if r.Body != nil {
 			bodyBytes, _ := ioutil.ReadAll(r.Body)
 			// Restore the io.ReadCloser to its original state
@@ -143,6 +137,18 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 		}
 	}
 	return obj
+}
+
+//Gets url Values (if any)
+func (ct *Context) GetUrlValues() url.Values{
+	res := make(url.Values,0)
+	
+	if len(ct.Data.RawQuery) > 0 {
+		if qv, err := url.ParseQuery(ct.Data.RawQuery); err == nil {
+			return qv
+		}
+	}
+	return res
 }
 
 func (self *Context) GetTotalTime() time.Duration {
