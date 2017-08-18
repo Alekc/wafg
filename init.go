@@ -65,7 +65,7 @@ func (ws *WafServer) Start() {
 
 func (ws *WafServer) initLogger() {
 	log = &customLog{}
-	log.Out = os.Stderr
+	log.Out = os.Stdout
 	log.Formatter = new(logrus.TextFormatter)
 	log.Hooks = make(logrus.LevelHooks)
 	log.Level = ws.Settings.LogLevel
