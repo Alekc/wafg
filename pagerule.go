@@ -5,9 +5,13 @@ import (
 )
 
 const (
+	//searchFields
 	searchFieldHost   = "host"
 	searchFieldPath   = "path"
 	searchFieldHeader = "header"
+	searchFieldMethod = "method"
+	
+	//actions
 	actionWhitelist   = "whitelist"
 	actionForbid      = "forbid"
 	actionAlterRates  = "alter_rates"
@@ -53,6 +57,8 @@ func (pr *pageRule) Match(ctx *Context) bool {
 		case searchFieldHeader:
 			foundMatch = searchItem.Condition.Match(ctx.Data.Headers.Get(searchItem.ExtraField))
 			break
+		case searchFieldMethod:
+			foundMatch = searchItem.Condition.Match(ctx.Data.Method)
 		}
 		// If we have failed at least one of conditions, return everything earlier
 		if !foundMatch {
@@ -72,9 +78,16 @@ func (pr *pageRule) AddPathMatch(matcher matcher.Generic) {
 	pr.SearchFor = append(pr.SearchFor, newSearchItem(searchFieldPath, matcher))
 }
 
+// Match by Header value
 func (pr *pageRule) AddHeaderMatch(headerName string, matcher matcher.Generic){
 	searchItem := newSearchItem(searchFieldHeader, matcher)
 	searchItem.ExtraField = headerName
+	pr.SearchFor = append(pr.SearchFor, searchItem)
+}
+
+// Match by method (GET|POST|PUT,etc)
+func (pr *pageRule) AddMethodMatch(matcher matcher.Generic){
+	searchItem := newSearchItem(searchFieldMethod, matcher)
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
 
