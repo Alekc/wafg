@@ -6,15 +6,16 @@ import (
 
 const (
 	//searchFields
-	searchFieldHost   = "host"
-	searchFieldPath   = "path"
-	searchFieldHeader = "header"
-	searchFieldMethod = "method"
+	searchFieldHost       = "host"
+	searchFieldPath       = "path"
+	searchFieldHeader     = "header"
+	searchFieldMethod     = "method"
+	searchFieldOriginalIp = "original_ip"
 	
 	//actions
-	actionWhitelist   = "whitelist"
-	actionForbid      = "forbid"
-	actionAlterRates  = "alter_rates"
+	actionWhitelist  = "whitelist"
+	actionForbid     = "forbid"
+	actionAlterRates = "alter_rates"
 )
 
 type pageRule struct {
@@ -59,6 +60,10 @@ func (pr *pageRule) Match(ctx *Context) bool {
 			break
 		case searchFieldMethod:
 			foundMatch = searchItem.Condition.Match(ctx.Data.Method)
+			break
+		case searchFieldOriginalIp:
+			foundMatch = searchItem.Condition.Match(ctx.Data.OriginalIp)
+			break
 		}
 		// If we have failed at least one of conditions, return everything earlier
 		if !foundMatch {
@@ -79,15 +84,23 @@ func (pr *pageRule) AddPathMatch(matcher matcher.Generic) {
 }
 
 // Match by Header value
-func (pr *pageRule) AddHeaderMatch(headerName string, matcher matcher.Generic){
+func (pr *pageRule) AddHeaderMatch(headerName string, matcher matcher.Generic) {
 	searchItem := newSearchItem(searchFieldHeader, matcher)
 	searchItem.ExtraField = headerName
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
 
 // Match by method (GET|POST|PUT,etc)
-func (pr *pageRule) AddMethodMatch(matcher matcher.Generic){
+func (pr *pageRule) AddMethodMatch(matcher matcher.Generic) {
 	searchItem := newSearchItem(searchFieldMethod, matcher)
+	pr.SearchFor = append(pr.SearchFor, searchItem)
+}
+
+// Match by Original ip
+// Useful if you are behind cloudflare and want to match
+// their connecting node.
+func (pr *pageRule) AddMatchByOriginalIp(matcher matcher.Generic) {
+	searchItem := newSearchItem(searchFieldOriginalIp, matcher)
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
 
