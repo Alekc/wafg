@@ -48,27 +48,29 @@ func (pr *pageRule) Match(ctx *Context) bool {
 	
 	for _, searchItem := range pr.SearchFor {
 		foundMatch = true
+		var field interface{}
 		
 		switch searchItem.Field {
 		case searchFieldHost:
-			foundMatch = searchItem.Condition.Match(ctx.Data.Host)
+			field = ctx.Data.Host
 			break
 		case searchFieldPath:
-			foundMatch = searchItem.Condition.Match(ctx.Data.Path)
+			field = ctx.Data.Path
 			break
 		case searchFieldHeader:
-			foundMatch = searchItem.Condition.Match(ctx.Data.Headers.Get(searchItem.ExtraField))
+			field = ctx.Data.Headers.Get(searchItem.ExtraField)
 			break
 		case searchFieldMethod:
-			foundMatch = searchItem.Condition.Match(ctx.Data.Method)
+			field = ctx.Data.Method
 			break
 		case searchFieldOriginalIp:
-			foundMatch = searchItem.Condition.Match(ctx.Data.OriginalIp)
+			field = ctx.Data.OriginalIp
 			break
 		case searchFieldRawQuery:
-			foundMatch = searchItem.Condition.Match(ctx.Data.RawQuery)
+			field = ctx.Data.RawQuery
 			break
 		}
+		searchItem.Condition.Match(field)
 		// If we have failed at least one of conditions, return everything earlier
 		if !foundMatch {
 			return false
