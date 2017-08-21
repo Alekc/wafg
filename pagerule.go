@@ -74,24 +74,24 @@ func (pr *pageRule) Match(ctx *Context) bool {
 }
 
 //Add matcher by host
-func (pr *pageRule) AddHostMatch(matcher matcher.Generic) {
+func (pr *pageRule) AddMatchByHost(matcher matcher.Generic) {
 	pr.SearchFor = append(pr.SearchFor, newSearchItem(searchFieldHost, matcher))
 }
 
 //Add matcher by path
-func (pr *pageRule) AddPathMatch(matcher matcher.Generic) {
+func (pr *pageRule) AddMatchByPath(matcher matcher.Generic) {
 	pr.SearchFor = append(pr.SearchFor, newSearchItem(searchFieldPath, matcher))
 }
 
 // Match by Header value
-func (pr *pageRule) AddHeaderMatch(headerName string, matcher matcher.Generic) {
+func (pr *pageRule) AddMatchByHeader(headerName string, matcher matcher.Generic) {
 	searchItem := newSearchItem(searchFieldHeader, matcher)
 	searchItem.ExtraField = headerName
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
 
 // Match by method (GET|POST|PUT,etc)
-func (pr *pageRule) AddMethodMatch(matcher matcher.Generic) {
+func (pr *pageRule) AddMatchByMethod(matcher matcher.Generic) {
 	searchItem := newSearchItem(searchFieldMethod, matcher)
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
