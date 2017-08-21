@@ -12,6 +12,7 @@ const (
 	searchFieldMethod     = "method"
 	searchFieldOriginalIp = "original_ip"
 	searchFieldRawQuery   = "raw_query"
+	searchFieldUserAgent  = "user_agent"
 	
 	//actions
 	actionWhitelist  = "whitelist"
@@ -69,7 +70,11 @@ func (pr *pageRule) Match(ctx *Context) bool {
 		case searchFieldRawQuery:
 			field = ctx.Data.RawQuery
 			break
+		case searchFieldUserAgent:
+			field = ctx.Data.UserAgent
+			break
 		}
+		
 		searchItem.Condition.Match(field)
 		// If we have failed at least one of conditions, return everything earlier
 		if !foundMatch {
@@ -105,6 +110,12 @@ func (pr *pageRule) AddMatchByMethod(matcher matcher.Generic) {
 // Match by RawQuery
 func (pr *pageRule) AddMatchByRawQuery(matcher matcher.Generic) {
 	searchItem := newSearchItem(searchFieldRawQuery, matcher)
+	pr.SearchFor = append(pr.SearchFor, searchItem)
+}
+
+// Match by UserAgent
+func (pr *pageRule) AddMatchByUserAgent(matcher matcher.Generic) {
+	searchItem := newSearchItem(searchFieldUserAgent, matcher)
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
 
