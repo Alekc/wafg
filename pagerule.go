@@ -6,13 +6,14 @@ import (
 
 const (
 	//searchFields
-	searchFieldHost       = "host"
-	searchFieldPath       = "path"
-	searchFieldHeader     = "header"
-	searchFieldMethod     = "method"
-	searchFieldOriginalIp = "original_ip"
-	searchFieldRawQuery   = "raw_query"
-	searchFieldUserAgent  = "user_agent"
+	searchFieldHost        = "host"
+	searchFieldPath        = "path"
+	searchFieldHeader      = "header"
+	searchFieldMethod      = "method"
+	searchFieldOriginalIp  = "original_ip"
+	searchFieldRawQuery    = "raw_query"
+	searchFieldUserAgent   = "user_agent"
+	searchFieldRequestBody = "request_body"
 	
 	//actions
 	actionWhitelist  = "whitelist"
@@ -73,6 +74,9 @@ func (pr *pageRule) Match(ctx *Context) bool {
 		case searchFieldUserAgent:
 			field = ctx.Data.UserAgent
 			break
+		case searchFieldRequestBody:
+			field = ctx.Data.ReqBody
+			break
 		}
 		
 		searchItem.Condition.Match(field)
@@ -116,6 +120,16 @@ func (pr *pageRule) AddMatchByRawQuery(matcher matcher.Generic) {
 // Match by UserAgent
 func (pr *pageRule) AddMatchByUserAgent(matcher matcher.Generic) {
 	searchItem := newSearchItem(searchFieldUserAgent, matcher)
+	pr.SearchFor = append(pr.SearchFor, searchItem)
+}
+
+// Match by Request Body
+// this rule will be only triggered if method is either
+// POST|PUT|PATCH, because otherwise request body is not parsed.
+// Note: right now there is one possible issue with buffer overflow in case we permit
+// large file uploads. This needs to be fixed
+func (pr *pageRule) AddMatchByRequestBody(matcher matcher.Generic) {
+	searchItem := newSearchItem(searchFieldRequestBody, matcher)
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
 
