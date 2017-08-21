@@ -11,6 +11,7 @@ const (
 	searchFieldHeader     = "header"
 	searchFieldMethod     = "method"
 	searchFieldOriginalIp = "original_ip"
+	searchFieldRawQuery   = "raw_query"
 	
 	//actions
 	actionWhitelist  = "whitelist"
@@ -64,6 +65,9 @@ func (pr *pageRule) Match(ctx *Context) bool {
 		case searchFieldOriginalIp:
 			foundMatch = searchItem.Condition.Match(ctx.Data.OriginalIp)
 			break
+		case searchFieldRawQuery:
+			foundMatch = searchItem.Condition.Match(ctx.Data.RawQuery)
+			break
 		}
 		// If we have failed at least one of conditions, return everything earlier
 		if !foundMatch {
@@ -95,6 +99,14 @@ func (pr *pageRule) AddMatchByMethod(matcher matcher.Generic) {
 	searchItem := newSearchItem(searchFieldMethod, matcher)
 	pr.SearchFor = append(pr.SearchFor, searchItem)
 }
+
+// Match by RawQuery
+func (pr *pageRule) AddMatchByRawQuery(matcher matcher.Generic) {
+	searchItem := newSearchItem(searchFieldRawQuery, matcher)
+	pr.SearchFor = append(pr.SearchFor, searchItem)
+}
+
+//todo: add support for matching by query values
 
 // Match by Original ip
 // Useful if you are behind cloudflare and want to match
