@@ -18,10 +18,12 @@ type WafServer struct {
 }
 
 /**************************/
-func (ws *WafServer) ServeForbidden(w http.ResponseWriter) {
+func (ws *WafServer) ServeForbidden(ctx *Context) {
 	perfCounters.Add(COUNTER_BLOCKED_CONNECTIONS, 1)
+	w := *ctx.OrigWriter
 	w.WriteHeader(403)
 	w.Write([]byte("Forbidden"))
+	ctx.Data.RespCode = 403
 }
 
 //todo: remove old clients
@@ -46,26 +48,25 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//get the ip and check if we are banned already
 	if ws.IpBanManager.IsBlocked(ctx.Ip) {
 		log.DebugfWithFields("Refused connection", LogFields{"ip": ctx.Ip})
-		ws.ServeForbidden(w)
+		ws.ServeForbidden(ctx)
 		return
 	}
 	
 	//get the client or create it if it doesn't exists
 	client := ws.getClient(ctx.Ip)
-	if !client.CanServe(ctx) {
-		ws.ServeForbidden(w)
+	if !client.CanServe(ctx,rulesSet) {
+		ws.ServeForbidden(ctx)
 		return
 	}
 	
 	//we are good to go
 	ctx.Timers.BeginRequest = time.Now()
-	ctx.Refused = false
-	
 	ws.proceed(ctx)
 }
 
 // We have passed all checks, proceed with request.
 func (ws *WafServer) proceed(ctx *Context) {
+	ctx.Refused = false
 	//create reverse proxy and execute request
 	logRequest(ctx)
 	
@@ -85,15 +86,16 @@ func (ws *WafServer) triggerAfterServed(ctx *Context) {
 }
 
 //Gets (or creates) client from cache
-func (ws WafServer) getClient(ip string) *RemoteClient {
+func (ws *WafServer) getClient(ip string) *RemoteClient {
 	ws.Lock()
+	defer ws.Unlock()
 	var client *RemoteClient
+	
 	client, ok := ws.remoteClients[ip]
 	if !ok {
 		client = createNewRemoteClient(ip)
 		ws.remoteClients[ip] = client
 	}
-	ws.Unlock()
 	return client
 }
 

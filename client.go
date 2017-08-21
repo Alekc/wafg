@@ -35,24 +35,29 @@ func createNewRemoteClient(ip string) *RemoteClient {
 
 //checks if client is banned or not
 func (rc *RemoteClient) IsBanned() bool {
+	rc.RLock()
+	defer rc.RUnlock()
 	return time.Now().Before(rc.BannedTill)
 }
 
 //ban user for default time.
 func (rc *RemoteClient) Ban() {
-	log.InfofWithFields("Banned", LogFields{"ip": rc.Ip})
+	log.InfoWithFields("Banned", LogFields{"ip": rc.Ip})
 	perfCounters.Add(COUNTER_BANS, 1)
 	
 	//get initial point for the ban
+	rc.Lock()
 	banStart := time.Now()
 	if banStart.Before(rc.BannedTill) {
 		banStart = rc.BannedTill
 	}
 	
 	//update banned till on server and client
-	rc.BannedTill = banStart.Add(time.Duration(serverInstance.Settings.BanTimeSec) * time.Second)
-	serverInstance.IpBanManager.BlackList(rc.Ip, rc.BannedTill)
+	bannedTill := banStart.Add(time.Duration(serverInstance.Settings.BanTimeSec) * time.Second)
+	rc.BannedTill = bannedTill
+	rc.Unlock()
 	
+	serverInstance.IpBanManager.BlackList(rc.Ip, bannedTill)
 	//trigger eventual onBan callbacks
 	if cb := serverInstance.Callbacks.getAfterBanCallbacks(); len(cb) > 0 {
 		for _, f := range cb {
@@ -67,12 +72,15 @@ func (rc *RemoteClient) UnBan() {
 }
 
 //Check if this client can be served at all
-func (rc *RemoteClient) CanServe(ctx *Context) bool {
+func (rc *RemoteClient) CanServe(ctx *Context, activeRules []*pageRule) bool {
+	rc.Lock()
 	//set the last active position
 	rc.LastActive = time.Now()
+	rc.Unlock()
 	
 	//check for global request rates.
 	rc.ReqCounter.Incr(1)
+	
 	
 	//check if global request rate is too high
 	requestRate := rc.ReqCounter.Rate()
@@ -97,16 +105,16 @@ func (rc *RemoteClient) CanServe(ctx *Context) bool {
 	counter := rc.getUrlCounter(ctx)
 	counter.Incr(1)
 	
-	//check if rate is too high
-	if counter.Rate() > serverInstance.Settings.MaxRequestsForSameUrl {
+	//determine maximum requestRate for the same ur
+	if counter.Rate() > serverInstance.Rules.GetMaximumReqRateForSameRule(activeRules) {
 		log.InfoWithFields(
 			"Client exceeded request rate on",
 			LogFields{
-				"ip":   ctx.Data.Ip,
-				"host": ctx.Data.Host,
-				"path": ctx.Data.Path,
+				"ip":       ctx.Data.Ip,
+				"host":     ctx.Data.Host,
+				"path":     ctx.Data.Path,
 				"req_rate": counter.Rate(),
-				"url": ctx.Data.Path, //todo: add full url to context
+				"url":      ctx.Data.Path, //todo: add full url to context
 			},
 		)
 		rc.Ban()

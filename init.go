@@ -33,29 +33,6 @@ func newServerInstance() *WafServer {
 	//prv
 	server.remoteClients = make(map[string]*RemoteClient)
 	
-	//https://stackoverflow.com/questions/40624248/golang-force-http-request-to-specific-ip-similar-to-curl-resolve
-	dialer := &net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-		DualStack: true,
-	}
-	
-	server.httpCLient = &http.Client{
-		Timeout: time.Second * 30,
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				//override addr to upstream
-				addr = server.Settings.UpstreamAddress
-				return dialer.DialContext(ctx, network, addr)
-			},
-			MaxIdleConns:          100,
-			IdleConnTimeout:       90 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
-	}
-	
 	server.Callbacks = &Callbacks{
 		afterServed: make([]func(context *Context), 0),
 		afterBan:    make([]func(rc *RemoteClient), 0),
@@ -67,6 +44,7 @@ func newServerInstance() *WafServer {
 //Starts everything
 func (ws *WafServer) Start() {
 	ws.initLogger()
+	ws.initHttpClient()
 	go ws.clientCleaner()
 	
 	//handler for expvar
@@ -87,7 +65,7 @@ func (ws *WafServer) Start() {
 
 func (ws *WafServer) initLogger() {
 	log = &customLog{}
-	log.Out = os.Stderr
+	log.Out = os.Stdout
 	log.Formatter = new(logrus.TextFormatter)
 	log.Hooks = make(logrus.LevelHooks)
 	log.Level = ws.Settings.LogLevel
@@ -98,6 +76,32 @@ func (ws *WafServer) initLogger() {
 	//log.Formatter = &logrus.JSONFormatter{}
 }
 
+func (ws *WafServer) initHttpClient(){
+	//https://stackoverflow.com/questions/40624248/golang-force-http-request-to-specific-ip-similar-to-curl-resolve
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+		DualStack: true,
+	}
+	
+	ws.httpCLient = &http.Client{
+		Timeout: time.Second * 30,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				//override addr to upstream
+				addr = ws.Settings.UpstreamAddress
+				return dialer.DialContext(ctx, network, addr)
+			},
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
+	
+}
+
 //removes obsolete clients
 func (ws *WafServer) clientCleaner() {
 	c := time.Tick(30 * time.Second)
@@ -105,11 +109,13 @@ func (ws *WafServer) clientCleaner() {
 		cutoff := time.Now().Add(-time.Duration(ws.Settings.CleanClientsAfterSecInactivity) * time.Minute)
 		ws.Lock()
 		for key, rc := range ws.remoteClients {
+			rc.RLock()
 			if rc.LastActive.Before(cutoff) {
 				log.DebugfWithFields("Removing Client due to inactivity", LogFields{"ip": key})
 				
 				delete(ws.remoteClients, key)
 			}
+			rc.RUnlock()
 		}
 		ws.Unlock()
 	}
