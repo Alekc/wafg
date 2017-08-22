@@ -5,10 +5,9 @@ import (
 )
 
 const (
-	//searchFields
-	searchFieldHost        = "host"
-	searchFieldPath        = "path"
-	searchFieldHeader      = "header"
+	//searchFieldssearchFieldHost   = "host"
+	searchFieldPath   = "path"
+	searchFieldHeader = "header"
 	searchFieldMethod      = "method"
 	searchFieldOriginalIp  = "original_ip"
 	searchFieldRawQuery    = "raw_query"
@@ -16,9 +15,9 @@ const (
 	searchFieldRequestBody = "request_body"
 	
 	//actions
-	actionWhitelist  = "whitelist"
-	actionForbid     = "forbid"
-	actionAlterRates = "alter_rates"
+	actionWhitelist   = "whitelist"
+	actionForbid      = "forbid"
+	actionAlterRates  = "alter_rates"
 )
 
 type pageRule struct {
@@ -47,11 +46,10 @@ func newSearchItem(field string, matcher matcher.Generic) searchItem {
 // Sadly we DO NOT support for an OR for now (create 2 rules for that).
 func (pr *pageRule) Match(ctx *Context) bool {
 	var foundMatch bool
-	
+
 	for _, searchItem := range pr.SearchFor {
 		foundMatch = true
 		var field interface{}
-		
 		switch searchItem.Field {
 		case searchFieldHost:
 			field = ctx.Data.Host

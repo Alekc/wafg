@@ -211,7 +211,7 @@ func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 		}
 	} else {
 		perfCounters.Add(COUNTER_STATUS_5XX, 1) //todo decide if move to err?
-		log.Warningf("http: proxy error: %v", err)
+		log.WarningFWithFields("http: proxy error: %+v", LogFields{"path": ctx.Data.Path,"host": ctx.Data.Host}, err)
 		rw.WriteHeader(http.StatusBadGateway)
 		return
 	}
