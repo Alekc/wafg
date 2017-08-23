@@ -13,10 +13,10 @@ func createNewRulesManager() *RulesManager {
 	return obj
 }
 
-//checks if a given ruleset contains white list rule (which would have priority over anything else)
-func (rm *RulesManager) RuleSetHasWhitelist(rules []*pageRule) bool {
+
+func (rm *RulesManager) RulesetHasAction(rules []*pageRule,action string) bool {
 	for _, v := range rules {
-		if v.Action == actionWhitelist {
+		if v.Action == action {
 			return true
 		}
 	}

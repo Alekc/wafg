@@ -39,14 +39,14 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rulesSet := ws.Rules.GetMatchedRules(ctx)
 	
 	//If client is whitelisted, proceed with request ignoring everything else
-	if ws.IpBanManager.IsWhiteListed(ctx.Ip) || ws.Rules.RuleSetHasWhitelist(rulesSet){
+	if ws.IpBanManager.IsWhiteListed(ctx.Ip) || ws.Rules.RulesetHasAction(rulesSet, actionWhitelist) {
 		perfCounters.Add(COUNTER_WHITELISTED_CONNECTIONS, 1)
 		ws.proceed(ctx)
 		return
 	}
 	
 	//get the ip and check if we are banned already
-	if ws.IpBanManager.IsBlocked(ctx.Ip) {
+	if ws.IpBanManager.IsBlocked(ctx.Ip) || ws.Rules.RulesetHasAction(rulesSet, actionForbid) {
 		log.DebugfWithFields("Refused connection", LogFields{"ip": ctx.Ip})
 		ws.ServeForbidden(ctx)
 		return
@@ -54,7 +54,7 @@ func (ws *WafServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	
 	//get the client or create it if it doesn't exists
 	client := ws.getClient(ctx.Ip)
-	if !client.CanServe(ctx,rulesSet) {
+	if !client.CanServe(ctx, rulesSet) {
 		ws.ServeForbidden(ctx)
 		return
 	}
