@@ -1,11 +1,15 @@
 package wafg
 
-import "sync"
+import (
+	"sync"
+	"net/http"
+)
 
 type Callbacks struct {
 	sync.RWMutex
-	afterBan    []func(rc *RemoteClient)
-	afterServed []func(context *Context)
+	afterBan      []func(rc *RemoteClient)
+	afterServed   []func(context *Context)
+	afterResponse []func(ctx *Context, response *http.Response)
 }
 
 func (cs *Callbacks) AddAfterServedCallBack(f func(context *Context)) {
@@ -19,7 +23,11 @@ func (cs *Callbacks) AddAfterBanCallBack(f func(rc *RemoteClient)) {
 	cs.afterBan = append(cs.afterBan, f)
 	cs.Unlock()
 }
-
+func (cs *Callbacks) AddAfterResponseCallBack(f func(ctx *Context, response *http.Response)) {
+	cs.Lock()
+	cs.afterResponse = append(cs.afterResponse, f)
+	cs.Unlock()
+}
 func (cs *Callbacks) getAfterServedCallbacks() []func(context *Context) {
 	cs.RLock()
 	defer cs.RUnlock()
@@ -29,4 +37,9 @@ func (cs *Callbacks) getAfterBanCallbacks() []func(rc *RemoteClient) {
 	cs.RLock()
 	defer cs.RUnlock()
 	return cs.afterBan
+}
+func (cs *Callbacks) getAfterResponseCallbacks() []func(ctx *Context, response *http.Response) {
+	cs.RLock()
+	defer cs.RUnlock()
+	return cs.afterResponse
 }

@@ -191,9 +191,11 @@ func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 	
 	res, err := transport.RoundTrip(outreq)
 	ctx.Timers.ReceivedResponse = time.Now()
-
+	
 	//add status code to stats
 	if err == nil {
+		//alter response
+		serverInstance.triggerAfterResponse(ctx, res)
 		ctx.Data.RespCode = res.StatusCode
 		switch {
 		case res.StatusCode >= 200 && res.StatusCode < 299:
@@ -211,7 +213,7 @@ func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 		}
 	} else {
 		perfCounters.Add(COUNTER_STATUS_5XX, 1) //todo decide if move to err?
-		log.WarningFWithFields("http: proxy error: %+v", LogFields{"path": ctx.Data.Path,"host": ctx.Data.Host}, err)
+		log.WarningFWithFields("http: proxy error: %+v", LogFields{"path": ctx.Data.Path, "host": ctx.Data.Host}, err)
 		rw.WriteHeader(http.StatusBadGateway)
 		return
 	}
@@ -231,6 +233,7 @@ func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 		}
 		rw.Header().Add("Trailer", strings.Join(trailerKeys, ", "))
 	}
+
 	
 	rw.WriteHeader(res.StatusCode)
 	if len(res.Trailer) > 0 {

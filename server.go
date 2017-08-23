@@ -79,8 +79,18 @@ func (ws *WafServer) proceed(ctx *Context) {
 func (ws *WafServer) triggerAfterServed(ctx *Context) {
 	callbacks := ws.Callbacks.getAfterServedCallbacks()
 	if len(callbacks) > 0 {
-		for _, f := range ws.Callbacks.afterServed {
+		for _, f := range callbacks {
 			f(ctx)
+		}
+	}
+}
+
+//
+func (ws *WafServer) triggerAfterResponse(ctx *Context, response *http.Response) {
+	callbacks := ws.Callbacks.getAfterResponseCallbacks()
+	if len(callbacks) > 0 {
+		for _, f := range callbacks {
+			f(ctx, response)
 		}
 	}
 }
