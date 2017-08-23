@@ -78,7 +78,7 @@ func (pr *pageRule) Match(ctx *Context) bool {
 			break
 		}
 		
-		searchItem.Condition.Match(field)
+		foundMatch = searchItem.Condition.Match(field)
 		// If we have failed at least one of conditions, return everything earlier
 		if !foundMatch {
 			return false
