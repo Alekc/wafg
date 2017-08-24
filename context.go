@@ -10,6 +10,7 @@ import (
 )
 
 type Context struct {
+	Client      *RemoteClient
 	OrigRequest *http.Request
 	OrigWriter  *http.ResponseWriter
 	Ip          string
@@ -140,8 +141,8 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 }
 
 //Gets url Values (if any)
-func (cd *ContextData) GetUrlValues() url.Values{
-	res := make(url.Values,0)
+func (cd *ContextData) GetUrlValues() url.Values {
+	res := make(url.Values, 0)
 	
 	if len(cd.RawQuery) > 0 {
 		if qv, err := url.ParseQuery(cd.RawQuery); err == nil {
