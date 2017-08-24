@@ -30,6 +30,9 @@ func createNewRemoteClient(ip string) *RemoteClient {
 	obj.BannedTill = time.Now().Add(-1 * time.Hour)
 	obj.Ip = ip
 	
+	//start cleaner thread
+	go obj.cleaner()
+	
 	return obj
 }
 
@@ -144,4 +147,18 @@ func (rc *RemoteClient) getUrlCounter(ctx *Context) *ratecounter.RateCounter {
 	rc.Unlock()
 	
 	return urlHistory
+}
+
+func (rc *RemoteClient) cleaner(){
+	ticker := time.NewTicker(1 * time.Minute) //todo increase one tested properly
+	for _ = range ticker.C {
+		rc.RLock()
+		cutoff := time.Now().Add(-time.Duration(serverInstance.Settings.CleanClientsAfterSecInactivity) * time.Minute)
+		if rc.LastActive.Before(cutoff) {
+			log.Info("Remove")
+			serverInstance.removeClient(rc.Ip)
+			ticker.Stop()
+		}
+		rc.RUnlock()
+	}
 }

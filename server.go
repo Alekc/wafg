@@ -109,6 +109,21 @@ func (ws *WafServer) getClient(ip string) *RemoteClient {
 	return client
 }
 
+func (ws *WafServer) removeClient(ip string) {
+	ws.Lock()
+	defer ws.Unlock()
+	if _, ok := ws.remoteClients[ip]; ok {
+		delete(ws.remoteClients, ip)
+	}
+}
+
+//Gets the count of total clients
+func (ws *WafServer) GetClientCount() int {
+	ws.RLock()
+	defer ws.RUnlock()
+	return len(ws.remoteClients)
+}
+
 func logRequest(ctx *Context) {
 	ctx.Timers.Served = time.Now()
 	

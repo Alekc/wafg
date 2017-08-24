@@ -45,7 +45,7 @@ func newServerInstance() *WafServer {
 func (ws *WafServer) Start() {
 	ws.initLogger()
 	ws.initHttpClient()
-	go ws.clientCleaner()
+	go monitoringAgent()
 	
 	//handler for expvar
 	go http.ListenAndServe(":7777", nil)
@@ -84,6 +84,7 @@ func (ws *WafServer) initHttpClient(){
 		DualStack: true,
 	}
 	
+	//
 	ws.httpCLient = &http.Client{
 		Timeout: time.Second * 30,
 		Transport: &http.Transport{
@@ -98,25 +99,5 @@ func (ws *WafServer) initHttpClient(){
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
 		},
-	}
-	
-}
-
-//removes obsolete clients
-func (ws *WafServer) clientCleaner() {
-	c := time.Tick(30 * time.Second)
-	for range c {
-		cutoff := time.Now().Add(-time.Duration(ws.Settings.CleanClientsAfterSecInactivity) * time.Minute)
-		ws.Lock()
-		for key, rc := range ws.remoteClients {
-			rc.RLock()
-			if rc.LastActive.Before(cutoff) {
-				log.DebugfWithFields("Removing Client due to inactivity", LogFields{"ip": key})
-				
-				delete(ws.remoteClients, key)
-			}
-			rc.RUnlock()
-		}
-		ws.Unlock()
 	}
 }
