@@ -13,5 +13,9 @@ func StringContains(search string) Generic {
 }
 
 func (sm *stringContains) Match(value interface{}) bool {
-	return strings.Contains(value.(string), sm.searchValue)
+	if castedString,ok := value.(string); !ok {
+		return false //not a string
+	} else {
+		return strings.Contains(castedString, sm.searchValue)
+	}
 }
