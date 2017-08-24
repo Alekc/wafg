@@ -12,17 +12,23 @@ type Callbacks struct {
 	afterResponse []func(ctx *Context, response *http.Response)
 }
 
+// Add AfterServedCallBack.
+// This callback will be called when a response (refused or accepted) has
+// been served to client. Useful for your custom logging.
 func (cs *Callbacks) AddAfterServedCallBack(f func(context *Context)) {
 	cs.Lock()
 	cs.afterServed = append(cs.afterServed, f)
 	cs.Unlock()
 }
 
+// Add AfterBanCallBack
+// This callback will be called when a request trigger a ban
 func (cs *Callbacks) AddAfterBanCallBack(f func(rc *RemoteClient)) {
 	cs.Lock()
 	cs.afterBan = append(cs.afterBan, f)
 	cs.Unlock()
 }
+
 func (cs *Callbacks) AddAfterResponseCallBack(f func(ctx *Context, response *http.Response)) {
 	cs.Lock()
 	cs.afterResponse = append(cs.afterResponse, f)
