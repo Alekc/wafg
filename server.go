@@ -108,6 +108,7 @@ func (ws *WafServer) getClient(ip string) *RemoteClient {
 	}
 	return client
 }
+
 // Removes client from the pool byt it's ip
 func (ws *WafServer) removeClient(ip string) {
 	ws.Lock()
@@ -122,18 +123,4 @@ func (ws *WafServer) GetClientCount() int {
 	ws.RLock()
 	defer ws.RUnlock()
 	return len(ws.remoteClients)
-}
-
-func logRequest(ctx *Context) {
-	ctx.Timers.Served = time.Now()
-	
-	log.Debugf(
-		`%s - [%s] - %s %s [%dms] [%dns]`,
-		ctx.Ip,
-		time.Now().Format("2006-01-02 15:04:05"),
-		ctx.Data.Method,
-		ctx.Data.Path,
-		ctx.GetTotalTime().Nanoseconds()/1e6,
-		ctx.GetOverhead().Nanoseconds(),
-	)
 }

@@ -3,6 +3,7 @@ package wafg
 import (
 	"github.com/sirupsen/logrus"
 	//"gopkg.in/gemnasium/logrus-graylog-hook.v2"
+	time"time"
 )
 
 type LogFields map[string]interface{}
@@ -68,4 +69,20 @@ func (self *customLog) WarningFWithFields(format string, fields LogFields, args 
 //}
 func (self *customLog) ErrorfWithFields(format string, fields LogFields, args ...interface{}) {
 	log.WithFields(logrus.Fields(fields)).Errorf(format, args)
+}
+
+
+
+func logRequest(ctx *Context) {
+	ctx.Timers.Served = time.Now()
+	
+	log.Debugf(
+		`%s - [%s] - %s %s [%dms] [%dns]`,
+		ctx.Ip,
+		time.Now().Format("2006-01-02 15:04:05"),
+		ctx.Data.Method,
+		ctx.Data.Path,
+		ctx.GetTotalTime().Nanoseconds()/1e6,
+		ctx.GetOverhead().Nanoseconds(),
+	)
 }
