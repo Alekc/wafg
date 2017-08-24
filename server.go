@@ -108,7 +108,7 @@ func (ws *WafServer) getClient(ip string) *RemoteClient {
 	}
 	return client
 }
-
+// Removes client from the pool byt it's ip
 func (ws *WafServer) removeClient(ip string) {
 	ws.Lock()
 	defer ws.Unlock()
