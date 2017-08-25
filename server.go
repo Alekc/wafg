@@ -20,6 +20,12 @@ type WafServer struct {
 /**************************/
 func (ws *WafServer) ServeForbidden(ctx *Context) {
 	perfCounters.Add(COUNTER_BLOCKED_CONNECTIONS, 1)
+	//we still need to feed appropriate values to the context timers
+	ctx.Timers.BeginRequest = time.Now()
+	ctx.Timers.ReceivedResponse = time.Now()
+	
+	//write response.
+	//todo move it to default 403 function (overridable)
 	w := *ctx.OrigWriter
 	w.WriteHeader(403)
 	w.Write([]byte("Forbidden"))
