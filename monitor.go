@@ -4,9 +4,21 @@ import (
 	"expvar"
 	"time"
 	"runtime"
+	"github.com/paulbellamy/ratecounter"
 )
 
 var perfCounters = expvar.NewMap("counters")
+
+type BackendPerformanceMonitor struct {
+	rates         map[string]*ratecounter.AvgRateCounter
+	responseCodes map[string]*ratecounter.Counter
+}
+func createNewBackendPerformanceMonitor() *BackendPerformanceMonitor{
+	obj := new (BackendPerformanceMonitor)
+	obj.rates = make(map[string]*ratecounter.AvgRateCounter)
+	return obj
+}
+var backendPerf *BackendPerformanceMonitor
 
 const (
 	//Connection related

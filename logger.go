@@ -3,7 +3,7 @@ package wafg
 import (
 	"github.com/sirupsen/logrus"
 	//"gopkg.in/gemnasium/logrus-graylog-hook.v2"
-	time"time"
+	"time"
 )
 
 type LogFields map[string]interface{}
@@ -17,16 +17,16 @@ var log *customLog
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
 	//log.SetFormatter(&log.JSONFormatter{})
-
+	
 	//extraGraylogData := make (map[string]interface{})
 	//extraGraylogData["app"] = "wgaf"
 	//graylogHook := graylog.NewGraylogHook("ip:port", extraGraylogData)
 	//log.AddHook(graylogHook)
-
+	
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
 	//log.SetOutput(os.Stdout)
-
+	
 	// Only log the warning severity or above.
 	//log.SetLevel(log.DebugLevel)
 }
@@ -40,7 +40,7 @@ func (self *customLog) InfofWithFields(format string, fields LogFields, args ...
 }
 func (self *customLog) InfoWithFields(format string, fields LogFields) {
 	log.WithFields(logrus.Fields(fields)).Info(format)
-
+	
 }
 func (self *customLog) DebugfWithFields(format string, fields LogFields, args ...interface{}) {
 	if args == nil {
@@ -71,8 +71,6 @@ func (self *customLog) ErrorfWithFields(format string, fields LogFields, args ..
 	log.WithFields(logrus.Fields(fields)).Errorf(format, args)
 }
 
-
-
 func logRequest(ctx *Context) {
 	log.Debugf(
 		`%s - [%s] - %s %s [%dms] [%dns]`,
@@ -80,7 +78,7 @@ func logRequest(ctx *Context) {
 		time.Now().Format("2006-01-02 15:04:05"),
 		ctx.Data.Method,
 		ctx.Data.Path,
-		ctx.GetTotalTime().Nanoseconds()/1e6,
-		ctx.GetOverhead().Nanoseconds(),
+		ctx.Timers.GetTotalTime().Nanoseconds()/1e6,
+		ctx.Timers.GetOverhead().Nanoseconds(),
 	)
 }

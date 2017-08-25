@@ -10,11 +10,12 @@ type RemoteClient struct {
 	sync.RWMutex
 	
 	//counter for request rate
-	ReqCounter *ratecounter.RateCounter
-	Ip         string
-	BannedTill time.Time
-	LastActive time.Time
-	UrlHistory map[string]*ratecounter.RateCounter
+	ReqCounter        *ratecounter.RateCounter
+	Ip                string
+	BannedTill        time.Time
+	LastActive        time.Time
+	UrlHistory        map[string]*ratecounter.RateCounter
+	StatusCodeHistory map[string]*ratecounter.RateCounter
 }
 
 //create new instance
@@ -29,6 +30,18 @@ func createNewRemoteClient(ip string) *RemoteClient {
 	//set BannedTill time to the past (in order to have valid value)
 	obj.BannedTill = time.Now().Add(-1 * time.Hour)
 	obj.Ip = ip
+	
+	//create map for http responses
+	obj.StatusCodeHistory = make(map[string]*ratecounter.RateCounter)
+	defaultDuration := time.Duration(serverInstance.Settings.ResponseCodeObservationPeriodSec) * time.Second
+	//if this feature is not disable, then allocate appropriate counters
+	if defaultDuration != 0 {
+		//in theory 2xx is not really useful for blocking purposes, but it might be interesting for analytics
+		obj.StatusCodeHistory["2xx"] = ratecounter.NewRateCounter(defaultDuration)
+		obj.StatusCodeHistory["3xx"] = ratecounter.NewRateCounter(defaultDuration)
+		obj.StatusCodeHistory["4xx"] = ratecounter.NewRateCounter(defaultDuration)
+		obj.StatusCodeHistory["5xx"] = ratecounter.NewRateCounter(defaultDuration)
+	}
 	
 	//start cleaner thread
 	go obj.cleaner()
@@ -83,7 +96,6 @@ func (rc *RemoteClient) CanServe(ctx *Context, activeRules []*pageRule) bool {
 	
 	//check for global request rates.
 	rc.ReqCounter.Incr(1)
-	
 	
 	//check if global request rate is too high
 	requestRate := rc.ReqCounter.Rate()
@@ -149,7 +161,7 @@ func (rc *RemoteClient) getUrlCounter(ctx *Context) *ratecounter.RateCounter {
 	return urlHistory
 }
 
-func (rc *RemoteClient) cleaner(){
+func (rc *RemoteClient) cleaner() {
 	ticker := time.NewTicker(1 * time.Minute) //todo increase one tested properly
 	for _ = range ticker.C {
 		rc.RLock()

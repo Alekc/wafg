@@ -197,19 +197,30 @@ func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 		//alter response
 		serverInstance.triggerAfterResponse(ctx, res)
 		ctx.Data.RespCode = res.StatusCode
+		key := ""
 		switch {
 		case res.StatusCode >= 200 && res.StatusCode < 299:
+			key = "2xx"
 			perfCounters.Add(COUNTER_STATUS_2XX, 1)
 			break
 		case res.StatusCode >= 300 && res.StatusCode < 399:
+			key = "3xx"
 			perfCounters.Add(COUNTER_STATUS_3XX, 1)
 			break
 		case res.StatusCode >= 400 && res.StatusCode < 499:
+			key = "4xx"
 			perfCounters.Add(COUNTER_STATUS_4XX, 1)
 			break
 		case res.StatusCode >= 500 && res.StatusCode < 599:
+			key = "5xx"
 			perfCounters.Add(COUNTER_STATUS_5XX, 1)
 			break
+		}
+		// if client is associated to this request then increase appropriate rateCounter (if exists)
+		if ctx.Client != nil {
+			if counter, ok := ctx.Client.StatusCodeHistory[key]; ok {
+				counter.Incr(1)
+			}
 		}
 	} else {
 		perfCounters.Add(COUNTER_STATUS_5XX, 1) //todo decide if move to err?
@@ -233,7 +244,6 @@ func (p *ReverseProxy) ServeHTTP(ctx *Context) {
 		}
 		rw.Header().Add("Trailer", strings.Join(trailerKeys, ", "))
 	}
-
 	
 	rw.WriteHeader(res.StatusCode)
 	if len(res.Trailer) > 0 {

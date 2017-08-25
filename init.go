@@ -32,6 +32,7 @@ func newServerInstance() *WafServer {
 	
 	//prv
 	server.remoteClients = make(map[string]*RemoteClient)
+	backendPerf = createNewBackendPerformanceMonitor()
 	
 	server.Callbacks = &Callbacks{
 		afterServed: make([]func(context *Context), 0),
@@ -76,7 +77,7 @@ func (ws *WafServer) initLogger() {
 	//log.Formatter = &logrus.JSONFormatter{}
 }
 
-func (ws *WafServer) initHttpClient(){
+func (ws *WafServer) initHttpClient() {
 	//https://stackoverflow.com/questions/40624248/golang-force-http-request-to-specific-ip-similar-to-curl-resolve
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second,
