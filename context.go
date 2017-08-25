@@ -15,7 +15,7 @@ type Context struct {
 	Ip          string
 	Data        ContextData
 	Cloudflare  CloudflareData
-	Timers      ContextTimers
+	Timers      *ContextTimers
 	Refused     bool
 }
 
@@ -27,12 +27,6 @@ type CloudflareData struct {
 	CFRay           string
 }
 
-type ContextTimers struct {
-	CreatedOn        time.Time
-	BeginRequest     time.Time
-	ReceivedResponse time.Time
-	Served           time.Time
-}
 
 func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 	obj := &Context{
@@ -41,7 +35,7 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 		Data:        createContextData(),
 		Refused:     true,
 		
-		Timers: ContextTimers{
+		Timers: &ContextTimers{
 			CreatedOn:    time.Now(),
 			BeginRequest: time.Now(), //just in order to avoid invalid values later
 		},
@@ -116,14 +110,4 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 		}
 	}
 	return obj
-}
-
-func (self *Context) GetTotalTime() time.Duration {
-	diff := self.Timers.Served.Sub(self.Timers.CreatedOn)
-	return diff
-}
-
-func (self *Context) GetOverhead() time.Duration {
-	diff := self.Timers.BeginRequest.Sub(self.Timers.CreatedOn)
-	return diff
 }
