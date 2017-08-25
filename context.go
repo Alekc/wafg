@@ -4,7 +4,6 @@ import (
 	"time"
 	"net/http"
 	"net"
-	"net/url"
 	"bytes"
 	"io/ioutil"
 )
@@ -20,20 +19,6 @@ type Context struct {
 	Refused     bool
 }
 
-type ContextData struct {
-	Host          string
-	Path          string
-	Method        string
-	Ip            string
-	OriginalIp    string
-	RawQuery      string
-	UserAgent     string
-	Headers       http.Header
-	ReqBody       string
-	XForwardedFor string
-	RespCode      int
-}
-
 type CloudflareData struct {
 	//see https://support.cloudflare.com/hc/en-us/articles/200170986-How-does-Cloudflare-handle-HTTP-Request-headers-
 	Country         string
@@ -47,13 +32,6 @@ type ContextTimers struct {
 	BeginRequest     time.Time
 	ReceivedResponse time.Time
 	Served           time.Time
-}
-
-//create context data
-func createContextData() ContextData {
-	obj := ContextData{}
-	
-	return obj
 }
 
 func newContext(w *http.ResponseWriter, r *http.Request) *Context {
@@ -138,18 +116,6 @@ func newContext(w *http.ResponseWriter, r *http.Request) *Context {
 		}
 	}
 	return obj
-}
-
-//Gets url Values (if any)
-func (cd *ContextData) GetUrlValues() url.Values {
-	res := make(url.Values, 0)
-	
-	if len(cd.RawQuery) > 0 {
-		if qv, err := url.ParseQuery(cd.RawQuery); err == nil {
-			return qv
-		}
-	}
-	return res
 }
 
 func (self *Context) GetTotalTime() time.Duration {
