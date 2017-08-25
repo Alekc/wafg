@@ -26,7 +26,7 @@ func GetInstance() *WafServer {
 func newServerInstance() *WafServer {
 	server := new(WafServer)
 	//pub
-	server.Settings = loadSettings()
+	server.Settings = loadDefaultSettings()
 	server.IpBanManager = createNewIpBanManagerInstance()
 	server.Rules = createNewRulesManager()
 	

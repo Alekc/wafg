@@ -30,7 +30,7 @@ type Settings struct {
 	CleanClientsAfterSecInactivity int64
 }
 
-func loadSettings() Settings {
+func loadDefaultSettings() Settings {
 	obj := Settings{
 		ListenAddress:                    ":80",
 		GlobalRequestRatePeriod:          10,
