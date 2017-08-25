@@ -162,13 +162,15 @@ func (rc *RemoteClient) getUrlCounter(ctx *Context) *ratecounter.RateCounter {
 }
 
 func (rc *RemoteClient) cleaner() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(1 * time.Minute)
 	for _ = range ticker.C {
 		rc.RLock()
 		cutoff := time.Now().Add(-time.Duration(serverInstance.Settings.CleanClientsAfterSecInactivity) * time.Minute)
 		if rc.LastActive.Before(cutoff) {
 			serverInstance.removeClient(rc.Ip)
 			ticker.Stop()
+			rc.RUnlock()
+			return
 		}
 		rc.RUnlock()
 	}
