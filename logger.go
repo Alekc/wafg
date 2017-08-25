@@ -74,8 +74,6 @@ func (self *customLog) ErrorfWithFields(format string, fields LogFields, args ..
 
 
 func logRequest(ctx *Context) {
-	ctx.Timers.Served = time.Now()
-	
 	log.Debugf(
 		`%s - [%s] - %s %s [%dms] [%dns]`,
 		ctx.Ip,

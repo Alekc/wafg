@@ -78,6 +78,7 @@ func (ws *WafServer) proceed(ctx *Context) {
 
 //Triggers callbacks after request has been served
 func (ws *WafServer) triggerAfterServed(ctx *Context) {
+	ctx.Timers.Served = time.Now()
 	callbacks := ws.Callbacks.getAfterServedCallbacks()
 	if len(callbacks) > 0 {
 		for _, f := range callbacks {
