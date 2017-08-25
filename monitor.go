@@ -59,6 +59,6 @@ func monitoringAgent() {
 		//routines
 		goroutines.Set(int64(runtime.NumGoroutine()))
 		//clients
-		clients.Set(int64(serverInstance.GetClientCount()) + 10)
+		clients.Set(int64(serverInstance.GetClientCount()))
 	}
 }
