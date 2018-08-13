@@ -161,13 +161,19 @@ func (rc *RemoteClient) getUrlCounter(ctx *Context) *ratecounter.RateCounter {
 	return urlHistory
 }
 
+// Checks if this client has not been used for a while and removes itself if needed from server
 func (rc *RemoteClient) cleaner() {
 	ticker := time.NewTicker(1 * time.Minute)
 	for _ = range ticker.C {
 		rc.RLock()
 		cutoff := time.Now().Add(-time.Duration(serverInstance.Settings.CleanClientsAfterSecInactivity) * time.Minute)
 		if rc.LastActive.Before(cutoff) {
+			//remove client from the server
 			serverInstance.removeClient(rc.Ip)
+			//free map
+			for k,_ := range rc.UrlHistory{
+				delete(rc.UrlHistory,k)
+			}
 			ticker.Stop()
 			rc.RUnlock()
 			return
