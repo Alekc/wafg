@@ -4,8 +4,8 @@ import "sync"
 
 type RulesManager struct {
 	sync.RWMutex
-	whitelistRules []*pageRule
-	rateRules      []*pageRule
+	whitelistRules []*PageRule
+	rateRules      []*PageRule
 }
 
 func createNewRulesManager() *RulesManager {
@@ -13,8 +13,7 @@ func createNewRulesManager() *RulesManager {
 	return obj
 }
 
-
-func (rm *RulesManager) RulesetHasAction(rules []*pageRule,action string) bool {
+func (rm *RulesManager) RulesetHasAction(rules []*PageRule, action string) bool {
 	for _, v := range rules {
 		if v.Action == action {
 			return true
@@ -25,7 +24,7 @@ func (rm *RulesManager) RulesetHasAction(rules []*pageRule,action string) bool {
 
 // Gets maximum request rate for the request given active rules.
 // Rules priority are LIFO (newest rules have priority)
-func (rm *RulesManager) GetMaximumReqRateForSameRule(rules []*pageRule) int64 {
+func (rm *RulesManager) GetMaximumReqRateForSameRule(rules []*PageRule) int64 {
 	maxReqSameUrl := serverInstance.Settings.MaxRequestsForSameUrl
 	for _, v := range rules {
 		if v.Action == actionAlterRates {
@@ -37,9 +36,8 @@ func (rm *RulesManager) GetMaximumReqRateForSameRule(rules []*pageRule) int64 {
 	return maxReqSameUrl
 }
 
-// Creates new instance of page rule (without adding it to the active list of urls)
-func (rm *RulesManager) New(name, description string) *pageRule {
-	obj := &pageRule{
+func NewRule(name, description string) *PageRule {
+	obj := &PageRule{
 		SearchFor:   make([]searchItem, 0),
 		Name:        name,
 		Description: description,
@@ -47,19 +45,25 @@ func (rm *RulesManager) New(name, description string) *pageRule {
 	return obj
 }
 
+// Creates new instance of page rule (without adding it to the active list of urls)
+// deprecated. todo: remove
+func (rm *RulesManager) New(name, description string) *PageRule {
+	return NewRule(name, description)
+}
+
 // Get all matched rules
 // Rules are ordered by their action in following order: Whitelist -> BlackList ->Alter Config
-func (rm *RulesManager) GetMatchedRules(ctx *Context) []*pageRule {
+func (rm *RulesManager) GetMatchedRules(ctx *Context) []*PageRule {
 	rm.RLock()
 	defer rm.RUnlock()
-	res := make([]*pageRule, 0)
+	res := make([]*PageRule, 0)
 	res = rm.extractMatchedRulesFromSlice(rm.whitelistRules, res, ctx)
 	res = rm.extractMatchedRulesFromSlice(rm.rateRules, res, ctx)
 	return res
 }
 
 // Extract matched rules from a slice
-func (rm *RulesManager) extractMatchedRulesFromSlice(input, output []*pageRule, ctx *Context) []*pageRule {
+func (rm *RulesManager) extractMatchedRulesFromSlice(input, output []*PageRule, ctx *Context) []*PageRule {
 	for _, rule := range input {
 		if rule.Match(ctx) {
 			output = append(output, rule)
@@ -69,7 +73,7 @@ func (rm *RulesManager) extractMatchedRulesFromSlice(input, output []*pageRule, 
 }
 
 //Add rule to rules manager
-func (rm *RulesManager) AddRule(rule *pageRule) {
+func (rm *RulesManager) AddRule(rule *PageRule) {
 	rm.Lock()
 	switch rule.Action {
 	case actionWhitelist:
@@ -79,6 +83,6 @@ func (rm *RulesManager) AddRule(rule *pageRule) {
 		rm.rateRules = append(rm.rateRules, rule)
 		break
 	}
-	
+
 	rm.Unlock()
 }

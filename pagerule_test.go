@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewSearchItem(t *testing.T){
-	mt := matcher.MatchString("bar")
+	mt := matcher.StringMatch("bar")
 	obj := newSearchItem("foo", mt)
 	if obj.Field != "foo"{
 		t.Errorf("Object field is not foo")

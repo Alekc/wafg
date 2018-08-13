@@ -4,7 +4,7 @@ type stringMatcher struct {
 	searchValue string
 }
 
-func MatchString(search string) Generic {
+func StringMatch(search string) Generic {
 	obj := new(stringMatcher)
 	obj.searchValue = search
 	return obj

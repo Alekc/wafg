@@ -3,7 +3,7 @@ package matcher
 import "testing"
 
 func TestMatchString(t *testing.T) {
-	obj := MatchString("xyz")
+	obj := StringMatch("xyz")
 	if !obj.Match("xyz") {
 		t.Errorf("String is not matched")
 	}
